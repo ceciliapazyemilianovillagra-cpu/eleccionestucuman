@@ -35,9 +35,54 @@ function Login({email,password,error,setEmail,setPassword,submit}:{email:string;
 }
 
 function Padron({token,close}:{token:string;close:()=>void}) {
-  const [query,setQuery]=useState(""); const [circuit,setCircuit]=useState(""); const [table,setTable]=useState(""); const [rows,setRows]=useState<Voter[]>([]); const [loading,setLoading]=useState(false); const [selected,setSelected]=useState<Voter|null>(null); const [message,setMessage]=useState("");
-  async function search(event?:FormEvent){event?.preventDefault();setLoading(true);setMessage("");const endpoint=new URL(`${SUPABASE_URL}/rest/v1/padron`);endpoint.searchParams.set("select","id,dni,apellido_nombre,domicilio,circuito,circuito_nombre,mesa,orden,anio_nacimiento");endpoint.searchParams.set("limit","50");endpoint.searchParams.set("order","apellido_nombre.asc");const clean=query.trim();if(clean) endpoint.searchParams.set("or",/^\d+$/.test(clean)?`(dni.eq.${clean},apellido_nombre.ilike.*${clean}*)`:`(apellido_nombre.ilike.*${clean}*)`);if(circuit.trim())endpoint.searchParams.set("circuito",`eq.${circuit.trim()}`);if(table.trim())endpoint.searchParams.set("mesa",`eq.${table.trim()}`);const response=await fetch(endpoint,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${token}`}});const data=await response.json();if(!response.ok){setRows([]);setMessage("No se pudo consultar el padrón.");}else{setRows(data);if(!data.length)setMessage("No encontramos coincidencias.");}setLoading(false);}
-  return <main className="padron-page"><header className="padron-header"><button onClick={close}>←</button><div><small>MÓDULO</small><h1>PADRÓN</h1></div><img src="/icon.svg" alt="Logo"/></header><section className="padron-content"><form className="search-card" onSubmit={search}><label>Buscar votante<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="DNI o apellido y nombre"/></label><div className="filters"><label>Circuito<input value={circuit} onChange={e=>setCircuit(e.target.value)} placeholder="Ej. 1"/></label><label>Mesa<input value={table} onChange={e=>setTable(e.target.value)} placeholder="Ej. 120"/></label></div><button>{loading?"BUSCANDO…":"BUSCAR"}</button></form><div className="results-head"><b>Resultados</b><span>{rows.length} mostrados</span></div>{message&&<p className="empty">{message}</p>}<div className="results">{rows.map(v=><button key={v.id} className="voter-row" onClick={()=>setSelected(v)}><span className="avatar">{v.apellido_nombre.slice(0,1)}</span><div><b>{v.apellido_nombre}</b><p>DNI {v.dni} · Mesa {v.mesa}</p></div><span>›</span></button>)}</div></section>{selected&&<VoterSheet voter={selected} token={token} close={()=>setSelected(null)}/>}</main>;
+  const [query,setQuery]=useState("");
+  const [rows,setRows]=useState<Voter[]>([]);
+  const [loading,setLoading]=useState(false);
+  const [selected,setSelected]=useState<Voter|null>(null);
+  const [message,setMessage]=useState("Buscá por DNI completo, apellido o nombre.");
+
+  async function search(event?:FormEvent) {
+    event?.preventDefault();
+    const clean=query.trim();
+
+    if (clean.length < 2) {
+      setRows([]);
+      setMessage("Escribí al menos 2 caracteres para buscar.");
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/search_padron`,{
+        method:"POST",
+        headers:{
+          apikey:SUPABASE_KEY,
+          Authorization:`Bearer ${token}`,
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({p_query:clean,p_limit:50})
+      });
+      const data=await response.json();
+
+      if (!response.ok) {
+        setRows([]);
+        setMessage("No se pudo consultar el padrón. Intentá nuevamente.");
+        return;
+      }
+
+      setRows(data);
+      if (!data.length) setMessage("No encontramos coincidencias.");
+    } catch {
+      setRows([]);
+      setMessage("No hay conexión. Revisá internet e intentá nuevamente.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return <main className="padron-page"><header className="padron-header"><button onClick={close}>←</button><div><small>MÓDULO</small><h1>PADRÓN</h1></div><img src="/icon.svg" alt="Logo"/></header><section className="padron-content"><form className="search-card" onSubmit={search}><label>Buscar votante<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="DNI, apellido o nombre" inputMode="search" autoComplete="off" autoFocus/></label><button disabled={loading}>{loading?"BUSCANDO…":"BUSCAR"}</button></form><div className="results-head"><b>Resultados</b><span>{rows.length} mostrados</span></div>{message&&<p className="empty">{message}</p>}<div className="results">{rows.map(v=><button key={v.id} className="voter-row" onClick={()=>setSelected(v)}><span className="avatar">{v.apellido_nombre.slice(0,1)}</span><div><b>{v.apellido_nombre}</b><p>DNI {v.dni} · Mesa {v.mesa}</p></div><span>›</span></button>)}</div></section>{selected&&<VoterSheet voter={selected} token={token} close={()=>setSelected(null)}/>}</main>;
 }
 
 function VoterSheet({voter,token,close}:{voter:Voter;token:string;close:()=>void}) {
@@ -46,3 +91,4 @@ function VoterSheet({voter,token,close}:{voter:Voter;token:string;close:()=>void
   async function save(){setSaved("Guardando…");const r=await fetch(`${SUPABASE_URL}/rest/v1/rpc/save_voter_profile`,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify({p_padron_id:voter.id,p_telefono:phone,p_estado:status,p_observaciones:notes})});setSaved(r.ok?"Cambios guardados":"No se pudo guardar");}
   return <div className="sheet-backdrop" onClick={close}><section className="voter-sheet" onClick={e=>e.stopPropagation()}><div className="sheet-grab"/><div className="sheet-title"><div><small>FICHA DEL VOTANTE</small><h2>{voter.apellido_nombre}</h2></div><button onClick={close}>×</button></div><dl><div><dt>DNI</dt><dd>{voter.dni}</dd></div><div><dt>Domicilio</dt><dd>{voter.domicilio||"Sin dato"}</dd></div><div><dt>Circuito</dt><dd>{voter.circuito_nombre||voter.circuito}</dd></div><div><dt>Mesa / Orden</dt><dd>{voter.mesa} / {voter.orden??"-"}</dd></div></dl><div className="profile-form"><label>Teléfono<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="381 000 0000"/></label><label>Estado<select value={status} onChange={e=>setStatus(e.target.value)}><option value="sin_contactar">Sin contactar</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option><option value="no_contactar">No contactar</option></select></label><label>Observaciones<textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3}/></label><button onClick={save}>GUARDAR CAMBIOS</button>{saved&&<p>{saved}</p>}</div></section></div>;
 }
+
