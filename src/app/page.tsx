@@ -1,3 +1,43 @@
 "use client";
-import { useState } from "react";
-export default function Home(){const [inside,setInside]=useState(false);if(inside)return <main className="min-h-screen bg-[#eef7fd] p-5"><section className="mx-auto max-w-md"><h1 className="display text-3xl uppercase text-[#17285F]">Elecciones Tucumán</h1><button className="mt-8 w-full rounded-2xl bg-white p-6 text-left shadow-sm"><span className="grid size-10 place-items-center rounded-xl bg-[#DDF4FF] text-[#1478B8]">⌕</span><b className="mt-4 block text-lg text-[#17285F]">PADRÓN</b><p className="mt-1 text-sm text-[#62708D]">Buscar, ver y editar votantes.</p></button></section></main>;return <main className="grid min-h-screen place-items-center bg-[#eef7fd] p-5"><section className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-xl shadow-[#17285F]/10"><h1 className="display text-3xl uppercase text-[#17285F]">Elecciones Tucumán</h1><p className="mt-7 text-lg font-semibold">Ingresá</p><form className="mt-5 space-y-4" onSubmit={e=>{e.preventDefault();setInside(true)}}><input required type="email" placeholder="Correo" className="w-full rounded-xl border border-[#c9d9e6] px-4 py-3"/><input required type="password" placeholder="Contraseña" className="w-full rounded-xl border border-[#c9d9e6] px-4 py-3"/><button className="w-full rounded-xl bg-[#17285F] px-4 py-3 font-bold text-white">INGRESAR A LA APP</button></form></section></main>}
+
+import { FormEvent, useEffect, useState } from "react";
+
+const SUPABASE_URL = "https://hhdxnkjchncupvbksklf.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoZHhua2pjaG5jdXB2Ymtza2xmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMzkzNTIsImV4cCI6MjEwMzgxNTM1Mn0.kbqZDu8aifd2plMz0uZ-BNvUXbmAUGN7tQidd5HWGpc";
+
+type Voter = { id: number; dni: string; apellido_nombre: string; domicilio: string | null; circuito: string; circuito_nombre: string | null; mesa: string; orden: number | null; anio_nacimiento: number | null };
+
+export default function Home() {
+  const [token, setToken] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [moduleOpen, setModuleOpen] = useState(false);
+
+  useEffect(() => { setToken(sessionStorage.getItem("et_token") || ""); }, []);
+
+  async function login(event: FormEvent) {
+    event.preventDefault(); setError("");
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+    const data = await response.json();
+    if (!response.ok) return setError("Correo o contraseña incorrectos.");
+    sessionStorage.setItem("et_token", data.access_token); setToken(data.access_token);
+  }
+
+  if (!token) return <Login email={email} password={password} error={error} setEmail={setEmail} setPassword={setPassword} submit={login} />;
+  if (moduleOpen) return <Padron token={token} close={() => setModuleOpen(false)} />;
+
+  return <main className="app-shell"><section className="mobile-page"><header className="topbar"><div className="brand"><img src="/icon.svg" alt="Logo"/><div><small>ELECCIONES</small><h1>TUCUMÁN</h1></div></div><button className="logout" onClick={() => { sessionStorage.clear(); setToken(""); }}>Salir</button></header><div className="welcome"><p>Panel principal</p><h2>Buen día, Emiliano</h2></div><section className="module-section"><div className="section-title"><h3>Módulos</h3><span>1 disponible</span></div><button className="module-card" onClick={() => setModuleOpen(true)}><span className="module-icon">⌕</span><div><b>PADRÓN</b><p>Buscar, consultar y editar votantes</p></div><span className="arrow">›</span></button></section><nav className="bottom-nav"><b>⌂<small>Inicio</small></b><span>⌕<small>Padrón</small></span><span>◎<small>Perfil</small></span></nav></section></main>;
+}
+
+function Login({email,password,error,setEmail,setPassword,submit}:{email:string;password:string;error:string;setEmail:(v:string)=>void;setPassword:(v:string)=>void;submit:(e:FormEvent)=>void}) {
+  return <main className="login-page"><form className="login-card" onSubmit={submit}><img className="login-logo" src="/icon.svg" alt="Logo Elecciones Tucumán"/><h1>Elecciones Tucumán</h1><p>Ingresá</p><label>Correo<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email"/></label><label>Contraseña<input required type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password"/></label>{error&&<div className="form-error">{error}</div>}<button>INGRESAR A LA APP</button></form></main>;
+}
+
+function Padron({token,close}:{token:string;close:()=>void}) {
+  const [query,setQuery]=useState(""); const [circuit,setCircuit]=useState(""); const [table,setTable]=useState(""); const [rows,setRows]=useState<Voter[]>([]); const [loading,setLoading]=useState(false); const [selected,setSelected]=useState<Voter|null>(null); const [message,setMessage]=useState("");
+  async function search(event?:FormEvent){event?.preventDefault();setLoading(true);setMessage("");const endpoint=new URL(`${SUPABASE_URL}/rest/v1/padron`);endpoint.searchParams.set("select","id,dni,apellido_nombre,domicilio,circuito,circuito_nombre,mesa,orden,anio_nacimiento");endpoint.searchParams.set("limit","50");endpoint.searchParams.set("order","apellido_nombre.asc");const clean=query.trim();if(clean) endpoint.searchParams.set("or",/^\d+$/.test(clean)?`(dni.eq.${clean},apellido_nombre.ilike.*${clean}*)`:`(apellido_nombre.ilike.*${clean}*)`);if(circuit.trim())endpoint.searchParams.set("circuito",`eq.${circuit.trim()}`);if(table.trim())endpoint.searchParams.set("mesa",`eq.${table.trim()}`);const response=await fetch(endpoint,{headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${token}`}});const data=await response.json();if(!response.ok){setRows([]);setMessage("No se pudo consultar el padrón.");}else{setRows(data);if(!data.length)setMessage("No encontramos coincidencias.");}setLoading(false);}
+  return <main className="padron-page"><header className="padron-header"><button onClick={close}>←</button><div><small>MÓDULO</small><h1>PADRÓN</h1></div><img src="/icon.svg" alt="Logo"/></header><section className="padron-content"><form className="search-card" onSubmit={search}><label>Buscar votante<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="DNI o apellido y nombre"/></label><div className="filters"><label>Circuito<input value={circuit} onChange={e=>setCircuit(e.target.value)} placeholder="Ej. 1"/></label><label>Mesa<input value={table} onChange={e=>setTable(e.target.value)} placeholder="Ej. 120"/></label></div><button>{loading?"BUSCANDO…":"BUSCAR"}</button></form><div className="results-head"><b>Resultados</b><span>{rows.length} mostrados</span></div>{message&&<p className="empty">{message}</p>}<div className="results">{rows.map(v=><button key={v.id} className="voter-row" onClick={()=>setSelected(v)}><span className="avatar">{v.apellido_nombre.slice(0,1)}</span><div><b>{v.apellido_nombre}</b><p>DNI {v.dni} · Mesa {v.mesa}</p></div><span>›</span></button>)}</div></section>{selected&&<VoterSheet voter={selected} close={()=>setSelected(null)}/>}</main>;
+}
+
+function VoterSheet({voter,close}:{voter:Voter;close:()=>void}) { return <div className="sheet-backdrop" onClick={close}><section className="voter-sheet" onClick={e=>e.stopPropagation()}><div className="sheet-grab"/><div className="sheet-title"><div><small>FICHA DEL VOTANTE</small><h2>{voter.apellido_nombre}</h2></div><button onClick={close}>×</button></div><dl><div><dt>DNI</dt><dd>{voter.dni}</dd></div><div><dt>Domicilio</dt><dd>{voter.domicilio||"Sin dato"}</dd></div><div><dt>Circuito</dt><dd>{voter.circuito_nombre||voter.circuito}</dd></div><div><dt>Mesa / Orden</dt><dd>{voter.mesa} / {voter.orden??"-"}</dd></div><div><dt>Año de nacimiento</dt><dd>{voter.anio_nacimiento??"-"}</dd></div></dl><div className="edit-note">La edición de teléfono, estado y observaciones se habilitará en esta ficha.</div></section></div>; }
