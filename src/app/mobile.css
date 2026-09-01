@@ -1,0 +1,20 @@
+/* Final responsive overrides. Imported after the base styles. */
+html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+body { -webkit-text-size-adjust: 100%; overscroll-behavior-x: none; }
+.topbar, .padron-header { padding-top: calc(20px + env(safe-area-inset-top)); }
+.mobile-page { min-height: 100dvh; }
+.padron-page, .users-page, .login-page, .app-shell { width: 100%; min-height: 100dvh; }
+.sheet-backdrop { width: 100vw; height: 100dvh; align-items: flex-end; }
+.voter-sheet { width: 100%; max-width: 600px; max-height: calc(100dvh - env(safe-area-inset-top)); padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+.role-checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.role-checks label { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 54px; padding: 10px 12px; text-align: left; text-transform: none; letter-spacing: 0; font-size: 12px; line-height: 1.25; overflow: hidden; }
+.role-checks input[type="checkbox"] { display: block; width: 18px; min-width: 18px; height: 18px; margin: 0; padding: 0; }
+
+@media (max-width: 520px) {
+  .topbar, .padron-header { padding: calc(18px + env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 18px max(20px, env(safe-area-inset-left)); }
+  .padron-content, .users-content { padding: 16px max(16px, env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  .voter-sheet { border-radius: 24px 24px 0 0; padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
+  .role-checks { grid-template-columns: 1fr; gap: 8px; }
+  .role-checks label { min-height: 50px; }
+}
+
