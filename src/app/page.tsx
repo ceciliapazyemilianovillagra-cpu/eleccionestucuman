@@ -9,25 +9,71 @@ type Voter = { id: number; dni: string; apellido_nombre: string; domicilio: stri
 
 export default function Home() {
   const [token, setToken] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [moduleOpen, setModuleOpen] = useState(false);
 
-  useEffect(() => { setToken(sessionStorage.getItem("et_token") || ""); }, []);
+  useEffect(() => {
+    let active=true;
+
+    async function restoreSession() {
+      try {
+        const saved=localStorage.getItem("et_session");
+        if (!saved) return;
+
+        const session=JSON.parse(saved);
+        const stillValid=session.access_token && (!session.expires_at || session.expires_at*1000>Date.now()+60000);
+
+        if (stillValid) {
+          if (active) setToken(session.access_token);
+          return;
+        }
+
+        if (!session.refresh_token) {
+          localStorage.removeItem("et_session");
+          return;
+        }
+
+        const response=await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,{
+          method:"POST",
+          headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},
+          body:JSON.stringify({refresh_token:session.refresh_token})
+        });
+        const refreshed=await response.json();
+
+        if (!response.ok) {
+          localStorage.removeItem("et_session");
+          return;
+        }
+
+        localStorage.setItem("et_session",JSON.stringify(refreshed));
+        if (active) setToken(refreshed.access_token);
+      } catch {
+        localStorage.removeItem("et_session");
+      } finally {
+        if (active) setCheckingSession(false);
+      }
+    }
+
+    restoreSession();
+    return ()=>{active=false;};
+  }, []);
 
   async function login(event: FormEvent) {
     event.preventDefault(); setError("");
     const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
     const data = await response.json();
     if (!response.ok) return setError("Correo o contraseña incorrectos.");
-    sessionStorage.setItem("et_token", data.access_token); setToken(data.access_token);
+    localStorage.setItem("et_session",JSON.stringify(data)); setToken(data.access_token);
   }
 
+  if (checkingSession) return <main className="login-page"><img className="login-logo" src="/icon.svg" alt="Logo Elecciones Tucumán"/></main>;
   if (!token) return <Login email={email} password={password} error={error} setEmail={setEmail} setPassword={setPassword} submit={login} />;
   if (moduleOpen) return <Padron token={token} close={() => setModuleOpen(false)} />;
 
-  return <main className="app-shell"><section className="mobile-page"><header className="topbar"><div className="brand"><img src="/icon.svg" alt="Logo"/><div><small>ELECCIONES</small><h1>TUCUMÁN</h1></div></div><button className="logout" onClick={() => { sessionStorage.clear(); setToken(""); }}>Salir</button></header><div className="welcome"><p>Panel principal</p><h2>Buen día, Emiliano</h2></div><section className="module-section"><div className="section-title"><h3>Módulos</h3><span>1 disponible</span></div><button className="module-card" onClick={() => setModuleOpen(true)}><span className="module-icon">⌕</span><div><b>PADRÓN</b><p>Buscar, consultar y editar votantes</p></div><span className="arrow">›</span></button></section><nav className="bottom-nav"><b>⌂<small>Inicio</small></b><span>⌕<small>Padrón</small></span><span>◎<small>Perfil</small></span></nav></section></main>;
+  return <main className="app-shell"><section className="mobile-page"><header className="topbar"><div className="brand"><img src="/icon.svg" alt="Logo"/><div><small>ELECCIONES</small><h1>TUCUMÁN</h1></div></div><button className="logout" onClick={() => { localStorage.removeItem("et_session"); setToken(""); }}>Salir</button></header><div className="welcome"><p>Panel principal</p><h2>Buen día, Emiliano</h2></div><section className="module-section"><div className="section-title"><h3>Módulos</h3><span>1 disponible</span></div><button className="module-card" onClick={() => setModuleOpen(true)}><span className="module-icon">⌕</span><div><b>PADRÓN</b><p>Buscar, consultar y editar votantes</p></div><span className="arrow">›</span></button></section><nav className="bottom-nav"><b>⌂<small>Inicio</small></b><span>⌕<small>Padrón</small></span><span>◎<small>Perfil</small></span></nav></section></main>;
 }
 
 function Login({email,password,error,setEmail,setPassword,submit}:{email:string;password:string;error:string;setEmail:(v:string)=>void;setPassword:(v:string)=>void;submit:(e:FormEvent)=>void}) {
