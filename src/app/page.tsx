@@ -1,13 +1,14 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { Search, Handshake, CalendarDays, Settings } from "lucide-react";
 import { SUPABASE_URL, SUPABASE_KEY, AppUser, roleNames } from "./panel/shared";
 import { manageUsers } from "./panel/shared";
 import { Login } from "./panel/Login";
 import { Padron } from "./panel/Padron";
 import { Colaboradores } from "./panel/Colaboradores";
 import { Agenda } from "./panel/Agenda";
-import { Configuracion } from "./panel/Configuracion";
+import { Configuracion, ConfigTabKey } from "./panel/Configuracion";
 import { AlertsBell } from "./panel/AlertsBell";
 
 type ModuleKey = "padron" | "colaboradores" | "agenda" | "config";
@@ -20,6 +21,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [moduleOpen, setModuleOpen] = useState<ModuleKey | null>(null);
+  const [configTab, setConfigTab] = useState<ConfigTabKey>("usuarios");
 
   useEffect(() => {
     let active = true;
@@ -119,18 +121,18 @@ export default function Home() {
   const canUsePadron = currentUser.allowed_modules.includes("padron");
   const isAdmin = currentUser.user_type === "superadmin";
 
-  const MODULES: { key: ModuleKey; visible: boolean; icon: string; className?: string; label: string; desc: string }[] = [
-    { key: "padron", visible: canUsePadron, icon: "⌕", label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
-    { key: "colaboradores", visible: canUsePadron, icon: "🤝", label: "COLABORADORES", desc: "Carga interna y export de colaboradores" },
-    { key: "agenda", visible: true, icon: "🗓", label: "AGENDA", desc: "Reuniones, capacitaciones y eventos" },
-    { key: "config", visible: isAdmin, icon: "⚙", label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
+  const MODULES: { key: ModuleKey; visible: boolean; icon: typeof Search; className?: string; label: string; desc: string }[] = [
+    { key: "padron", visible: canUsePadron, icon: Search, label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
+    { key: "colaboradores", visible: canUsePadron, icon: Handshake, label: "COLABORADORES", desc: "Carga interna y export de colaboradores" },
+    { key: "agenda", visible: true, icon: CalendarDays, label: "AGENDA", desc: "Reuniones, capacitaciones y eventos" },
+    { key: "config", visible: isAdmin, icon: Settings, label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
   ];
   const availableModules = MODULES.filter((m) => m.visible);
 
   if (moduleOpen === "padron") return <Padron token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "colaboradores") return <Colaboradores token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "agenda") return <Agenda token={token} close={() => setModuleOpen(null)} />;
-  if (moduleOpen === "config") return <Configuracion token={token} close={() => setModuleOpen(null)} />;
+  if (moduleOpen === "config") return <Configuracion token={token} close={() => setModuleOpen(null)} initialTab={configTab} />;
 
   return (
     <main className="app-shell">
@@ -145,7 +147,17 @@ export default function Home() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <AlertsBell token={token} />
+            <AlertsBell
+              token={token}
+              onOpenAlerts={
+                isAdmin
+                  ? () => {
+                      setConfigTab("alertas");
+                      setModuleOpen("config");
+                    }
+                  : undefined
+              }
+            />
             <button
               className="logout"
               onClick={() => {
@@ -164,7 +176,9 @@ export default function Home() {
           </div>
           {availableModules.map((m) => (
             <button key={m.key} className={`module-card ${m.className ?? ""}`} onClick={() => setModuleOpen(m.key)}>
-              <span className="module-icon">{m.icon}</span>
+              <span className="module-icon">
+                <m.icon size={22} strokeWidth={2} />
+              </span>
               <div>
                 <b>{m.label}</b>
                 <p>{m.desc}</p>

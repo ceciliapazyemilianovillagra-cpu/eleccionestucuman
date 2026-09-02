@@ -1,5 +1,6 @@
 "use client";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { Camera, Check } from "lucide-react";
 import "../external/external.css";
 import { callFn, clearToken, loadToken, saveToken } from "../external/api";
 import { ExternalLoginCard, ExternalShell } from "../external/ExternalShell";
@@ -148,7 +149,15 @@ export default function Fiscales() {
         <h2>Presencia</h2>
         <p className="ext-hint">Marcá tu llegada a la mesa. Se registra fecha, hora y ubicación.</p>
         <button className="ext-btn full" onClick={markPresent} disabled={locating || presentOk}>
-          {locating ? "OBTENIENDO UBICACIÓN..." : presentOk ? "PRESENCIA REGISTRADA ✓" : "MARCAR PRESENTE"}
+          {locating ? (
+            "OBTENIENDO UBICACIÓN..."
+          ) : presentOk ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <Check size={14} strokeWidth={3} /> PRESENCIA REGISTRADA
+            </span>
+          ) : (
+            "MARCAR PRESENTE"
+          )}
         </button>
         {presentMsg && <p className={presentOk ? "ext-success-msg" : "ext-error"}>{presentMsg}</p>}
         {geoError && <p className="ext-error">{geoError}</p>}
@@ -174,11 +183,21 @@ export default function Fiscales() {
           <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", margin: "0 0 6px" }}>VOTOS NAGLE</label>
           <input className="ext-mesa-input" style={{ marginBottom: 14 }} inputMode="numeric" placeholder="Total de votos" value={nagleVotes} onChange={(e) => setNagleVotes(e.target.value)} required disabled={closed} />
           <label className={`ext-file-btn ${actaFile ? "has-file" : ""}`}>
-            {actaFile ? `📷 ${actaFile.name}` : "📷 Subir foto del acta"}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <Camera size={16} strokeWidth={2} /> {actaFile ? actaFile.name : "Subir foto del acta"}
+            </span>
             <input type="file" accept="image/*" capture="environment" onChange={onFileChange} style={{ display: "none" }} disabled={closed} />
           </label>
           <button className="ext-btn full" style={{ marginTop: 14 }} disabled={closing || closed}>
-            {closing ? "ENVIANDO..." : closed ? "MESA CERRADA ✓" : "CERRAR MESA"}
+            {closing ? (
+              "ENVIANDO..."
+            ) : closed ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <Check size={14} strokeWidth={3} /> MESA CERRADA
+              </span>
+            ) : (
+              "CERRAR MESA"
+            )}
           </button>
         </form>
         {closeMsg && <p className={closed ? "ext-success-msg" : "ext-error"}>{closeMsg}</p>}

@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { CalendarDays, GraduationCap, Flag, Paperclip, ChevronLeft, ChevronRight } from "lucide-react";
 import { rpc, decodeJwtSub, formatDateTime } from "./shared";
 
 type Event = {
@@ -14,8 +15,13 @@ type Event = {
 };
 
 const TYPE_LABEL: Record<string, string> = { reunion: "Reunión", capacitacion: "Capacitación", evento: "Evento", otro: "Otro" };
-const TYPE_ICON: Record<string, string> = { reunion: "🗓", capacitacion: "🎓", evento: "📌", otro: "📎" };
+const TYPE_ICON: Record<string, typeof CalendarDays> = { reunion: CalendarDays, capacitacion: GraduationCap, evento: Flag, otro: Paperclip };
 const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
+
+function TYPE_ICON_COMPONENT({ type }: { type: string }) {
+  const Icon = TYPE_ICON[type] ?? CalendarDays;
+  return <Icon size={16} strokeWidth={2} />;
+}
 
 function dateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -48,9 +54,13 @@ function MonthCalendar({ events, month, setMonth, selected, setSelected }: { eve
   return (
     <div className="calendar">
       <div className="calendar-head">
-        <button type="button" onClick={() => setMonth(new Date(year, m - 1, 1))}>‹</button>
+        <button type="button" onClick={() => setMonth(new Date(year, m - 1, 1))}>
+          <ChevronLeft size={16} strokeWidth={2.5} />
+        </button>
         <b>{month.toLocaleDateString("es-AR", { month: "long", year: "numeric" })}</b>
-        <button type="button" onClick={() => setMonth(new Date(year, m + 1, 1))}>›</button>
+        <button type="button" onClick={() => setMonth(new Date(year, m + 1, 1))}>
+          <ChevronRight size={16} strokeWidth={2.5} />
+        </button>
       </div>
       <div className="calendar-grid calendar-weekdays">
         {WEEKDAYS.map((w, i) => (
@@ -197,7 +207,7 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                 return d.getFullYear() === month.getFullYear() && d.getMonth() === month.getMonth();
               })).map((ev) => (
                 <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
-                  <span className="avatar">{TYPE_ICON[ev.event_type]}</span>
+                  <span className="avatar"><TYPE_ICON_COMPONENT type={ev.event_type} /></span>
                   <div>
                     <b>{ev.title}</b>
                     <p>
@@ -221,7 +231,7 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                 <div className="results">
                   {list.map((ev) => (
                     <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
-                      <span className="avatar">{TYPE_ICON[ev.event_type]}</span>
+                      <span className="avatar"><TYPE_ICON_COMPONENT type={ev.event_type} /></span>
                       <div>
                         <b>{ev.title}</b>
                         <p>

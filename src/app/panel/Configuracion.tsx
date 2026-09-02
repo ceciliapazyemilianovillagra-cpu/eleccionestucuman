@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Search, Check } from "lucide-react";
 import { rpc, formatDateTime } from "./shared";
 import { Users } from "./Users";
 
@@ -56,7 +57,13 @@ function LinksSection() {
               <code>{url}</code>
             </div>
             <button className="ext-btn secondary" onClick={() => copy(url)} disabled={!origin}>
-              {copied === url ? "COPIADO ✓" : "COPIAR"}
+              {copied === url ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <Check size={13} strokeWidth={3} /> COPIADO
+                </span>
+              ) : (
+                "COPIAR"
+              )}
             </button>
           </div>
         );
@@ -139,7 +146,7 @@ function LogsSection({ token }: { token: string }) {
   return (
     <>
       <label className="users-search">
-        <span>⌕</span>
+        <Search size={16} strokeWidth={2} />
         <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar por módulo, acción o usuario" />
       </label>
       {loading && <p className="empty">Cargando…</p>}
@@ -169,10 +176,10 @@ const TABS = [
   { key: "links", label: "ENLACES" },
   { key: "logs", label: "LOGS" },
 ] as const;
-type TabKey = (typeof TABS)[number]["key"];
+export type ConfigTabKey = (typeof TABS)[number]["key"];
 
-export function Configuracion({ token, close }: { token: string; close: () => void }) {
-  const [tab, setTab] = useState<TabKey>("usuarios");
+export function Configuracion({ token, close, initialTab }: { token: string; close: () => void; initialTab?: ConfigTabKey }) {
+  const [tab, setTab] = useState<ConfigTabKey>(initialTab ?? "usuarios");
 
   return (
     <main className="padron-page">

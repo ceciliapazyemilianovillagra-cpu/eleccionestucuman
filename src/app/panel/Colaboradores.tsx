@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Users, CheckCircle2, TriangleAlert } from "lucide-react";
 import { rpc } from "./shared";
 
 type Colaborador = {
@@ -79,17 +80,23 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
       <section className="padron-content">
         <div className="stats-grid">
           <div className="stat-card">
-            <span className="stat-icon sky">👥</span>
+            <span className="stat-icon sky">
+              <Users size={18} strokeWidth={2} />
+            </span>
             <b>{total}</b>
             <p>Cargados</p>
           </div>
           <div className="stat-card">
-            <span className="stat-icon green">☑</span>
+            <span className="stat-icon green">
+              <CheckCircle2 size={18} strokeWidth={2} />
+            </span>
             <b>{unicos}</b>
             <p>Únicos</p>
           </div>
           <div className="stat-card">
-            <span className="stat-icon orange">⚠</span>
+            <span className="stat-icon orange">
+              <TriangleAlert size={18} strokeWidth={2} />
+            </span>
             <b>{disputed}</b>
             <p>Reclamados</p>
           </div>

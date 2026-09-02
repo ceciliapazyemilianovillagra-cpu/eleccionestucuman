@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
+import { Search } from "lucide-react";
 import "./external.css";
 import { callFn, clearToken, loadToken, saveToken } from "./api";
 import { ExternalLoginCard, ExternalShell } from "./ExternalShell";
@@ -194,7 +195,7 @@ export function MobilizerPortal({ fn, label }: { fn: "movilizadores" | "choferes
         <h2>Mis cargados</h2>
         <p className="ext-hint">Marcá el traslado de cada persona el día de la elección.</p>
         <div className="ext-list-search">
-          <span>🔍</span>
+          <Search size={16} strokeWidth={2} />
           <input placeholder="Buscar por nombre o DNI" value={listFilter} onChange={(e) => setListFilter(e.target.value)} />
         </div>
         {geoError && <b className="ext-error">{geoError}</b>}
