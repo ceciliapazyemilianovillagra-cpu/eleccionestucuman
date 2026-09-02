@@ -1,0 +1,31 @@
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 4px 0 18px; }
+.stat-card { background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 5px 20px #17285f0d; text-align: left; }
+.stat-card .stat-icon { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; font-size: 16px; margin-bottom: 8px; }
+.stat-icon.sky { background: var(--sky); }
+.stat-icon.green { background: #e3faf0; }
+.stat-icon.orange { background: #fff3e0; }
+.stat-card b { display: block; font-size: 22px; color: var(--navy); font-weight: 800; }
+.stat-card p { margin: 2px 0 0; font-size: 11px; color: var(--muted); font-weight: 700; }
+
+.badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 800; flex: none; }
+.badge.ok { background: #e3faf0; color: #147354; }
+.badge.danger { background: #fff0ef; color: #b52a21; }
+.badge.neutral { background: #eef3f8; color: var(--muted); }
+
+.export-row { display: flex; gap: 10px; margin: 12px 0; }
+.ext-btn { border: 0; border-radius: 12px; background: var(--navy); color: #fff; padding: 12px 16px; font-weight: 800; font-size: 12px; cursor: pointer; }
+.ext-btn.secondary { background: #eaf3fb; color: var(--navy); }
+.ext-btn.full { width: 100%; }
+.ext-btn:disabled { opacity: .5; cursor: default; }
+
+.alerts-bell { position: relative; }
+.bell-btn { position: relative; border: 0; background: #ffffff19; color: #fff; border-radius: 10px; width: 40px; height: 40px; font-size: 17px; cursor: pointer; }
+.bell-badge { position: absolute; top: -4px; right: -4px; background: var(--orange); color: #4a2c00; font-size: 10px; font-weight: 800; border-radius: 999px; min-width: 17px; height: 17px; display: grid; place-items: center; padding: 0 3px; }
+.bell-panel { position: absolute; top: 48px; right: 0; width: min(90vw, 340px); max-height: 70vh; overflow: auto; background: #fff; border-radius: 16px; box-shadow: 0 16px 48px #17285f30; padding: 14px; z-index: 20; color: var(--ink); }
+.bell-item { padding: 10px 0; border-bottom: 1px solid #edf1f4; display: grid; gap: 6px; }
+.bell-item p { margin: 0; font-size: 12px; line-height: 1.4; }
+
+.log-list { display: grid; gap: 8px; }
+.log-row { background: #fff; border-radius: 13px; padding: 11px 13px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px #17285f0b; }
+.log-row b { font-size: 12px; }
+.log-row p { margin: 3px 0 0; font-size: 11px; color: var(--muted); }
