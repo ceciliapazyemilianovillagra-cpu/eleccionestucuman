@@ -2,7 +2,7 @@ const ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjZHRiaW5xbHN2c3ZtcnlteWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzNDU3NTQsImV4cCI6MjEwMzkyMTc1NH0.Dha8bpiFQ7THgKszkFak1vn5XrsY0XZWz_Lu9MGMKz0";
 const BASE = "https://dcdtbinqlsvsvmrymyjr.supabase.co/functions/v1";
 
-export async function callFn(fn: "movilizadores" | "choferes" | "fiscales", token: string, body: Record<string, unknown>) {
+export async function callFn(fn: "movilizadores" | "choferes" | "fiscales" | "candidato", token: string, body: Record<string, unknown>) {
   const r = await fetch(`${BASE}/${fn}`, {
     method: "POST",
     headers: {

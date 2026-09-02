@@ -29,6 +29,7 @@ const EXTERNAL_LINKS = [
   { path: "/movilizadores", label: "Movilizadores", desc: "Portal para movilizadores: carga de votantes y traslado el día de la elección." },
   { path: "/choferes", label: "Choferes", desc: "Portal para choferes: carga de votantes y traslado el día de la elección." },
   { path: "/fiscales", label: "Fiscales", desc: "Portal para fiscales de mesa: presencia, votantes en mesa y cierre de comicio." },
+  { path: "/candidato", label: "Candidato", desc: "Sala de situación de la campaña: indicadores, mesas, traslados y alertas en vivo." },
 ];
 
 function LinksSection() {

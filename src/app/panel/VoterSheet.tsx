@@ -35,7 +35,7 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
     setRoles((current) => (current.includes(role) ? current.filter((item) => item !== role) : [...current, role]));
   }
 
-  async function generateAccess(fn: "movilizadores" | "choferes" | "fiscales") {
+  async function generateAccess(fn: "movilizadores" | "choferes" | "fiscales" | "candidato") {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -130,7 +130,7 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
               ))}
             </div>
           </fieldset>
-          {(roles.includes("movilizador") || roles.includes("chofer") || roles.some((r) => FISCAL_ROLES.includes(r))) && (
+          {(roles.includes("movilizador") || roles.includes("chofer") || roles.includes("candidato") || roles.some((r) => FISCAL_ROLES.includes(r))) && (
             <section className="mobilizer-access">
               <small>ACCESO EXTERNO</small>
               {roles.includes("movilizador") && (
@@ -146,6 +146,11 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
               {roles.some((r) => FISCAL_ROLES.includes(r)) && (
                 <button type="button" onClick={() => generateAccess("fiscales")}>
                   GENERAR CÓDIGO FISCAL
+                </button>
+              )}
+              {roles.includes("candidato") && (
+                <button type="button" onClick={() => generateAccess("candidato")}>
+                  GENERAR CÓDIGO CANDIDATO
                 </button>
               )}
               {accessCode && (
