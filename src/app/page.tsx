@@ -1,17 +1,18 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Search, Handshake, CalendarDays, Settings } from "lucide-react";
+import { Search, Handshake, CalendarDays, Settings, Landmark } from "lucide-react";
 import { SUPABASE_URL, SUPABASE_KEY, AppUser, roleNames } from "./panel/shared";
 import { manageUsers } from "./panel/shared";
 import { Login } from "./panel/Login";
 import { Padron } from "./panel/Padron";
 import { Colaboradores } from "./panel/Colaboradores";
 import { Agenda } from "./panel/Agenda";
+import { Comicios } from "./panel/Comicios";
 import { Configuracion, ConfigTabKey } from "./panel/Configuracion";
 import { AlertsBell } from "./panel/AlertsBell";
 
-type ModuleKey = "padron" | "colaboradores" | "agenda" | "config";
+type ModuleKey = "padron" | "colaboradores" | "agenda" | "comicios" | "config";
 
 export default function Home() {
   const [token, setToken] = useState("");
@@ -125,6 +126,7 @@ export default function Home() {
     { key: "padron", visible: canUsePadron, icon: Search, label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
     { key: "colaboradores", visible: canUsePadron, icon: Handshake, label: "COLABORADORES", desc: "Carga interna y export de colaboradores" },
     { key: "agenda", visible: true, icon: CalendarDays, label: "AGENDA", desc: "Reuniones, capacitaciones y eventos" },
+    { key: "comicios", visible: canUsePadron, icon: Landmark, label: "COMICIOS", desc: "Seguimiento de fiscales el día de la elección" },
     { key: "config", visible: isAdmin, icon: Settings, label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
   ];
   const availableModules = MODULES.filter((m) => m.visible);
@@ -132,6 +134,7 @@ export default function Home() {
   if (moduleOpen === "padron") return <Padron token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "colaboradores") return <Colaboradores token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "agenda") return <Agenda token={token} close={() => setModuleOpen(null)} />;
+  if (moduleOpen === "comicios") return <Comicios token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "config") return <Configuracion token={token} close={() => setModuleOpen(null)} initialTab={configTab} />;
 
   return (
