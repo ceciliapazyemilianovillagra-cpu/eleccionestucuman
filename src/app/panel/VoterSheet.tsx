@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { SUPABASE_URL, SUPABASE_KEY, MOVILIZADORES_URL, Voter, electoralRoles, decodeJwtSub, rpc } from "./shared";
+import { SUPABASE_URL, SUPABASE_KEY, Voter, electoralRoles, decodeJwtSub, rpc } from "./shared";
+
+const FISCAL_ROLES = ["fiscal", "fiscal_general", "fiscal_mesa", "fiscal_suplente", "coordinador_circuito", "coordinador_general"];
 
 export function VoterSheet({ voter, token, close }: { voter: Voter; token: string; close: () => void }) {
   const [phone, setPhone] = useState("");
@@ -33,14 +35,15 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
     setRoles((current) => (current.includes(role) ? current.filter((item) => item !== role) : [...current, role]));
   }
 
-  async function generateMobilizerAccess() {
-    const response = await fetch(MOVILIZADORES_URL, {
+  async function generateAccess(fn: "movilizadores" | "choferes" | "fiscales") {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ action: "provision", padron_id: voter.id }),
     });
     const data = await response.json();
     setAccessCode(data.code || data.error || "No se pudo generar el código.");
+    setCopied(false);
   }
 
   async function save() {
@@ -127,12 +130,24 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
               ))}
             </div>
           </fieldset>
-          {roles.includes("movilizador") && (
+          {(roles.includes("movilizador") || roles.includes("chofer") || roles.some((r) => FISCAL_ROLES.includes(r))) && (
             <section className="mobilizer-access">
               <small>ACCESO EXTERNO</small>
-              <button type="button" onClick={generateMobilizerAccess}>
-                GENERAR CÓDIGO MOVILIZADOR
-              </button>
+              {roles.includes("movilizador") && (
+                <button type="button" onClick={() => generateAccess("movilizadores")}>
+                  GENERAR CÓDIGO MOVILIZADOR
+                </button>
+              )}
+              {roles.includes("chofer") && (
+                <button type="button" onClick={() => generateAccess("choferes")}>
+                  GENERAR CÓDIGO CHOFER
+                </button>
+              )}
+              {roles.some((r) => FISCAL_ROLES.includes(r)) && (
+                <button type="button" onClick={() => generateAccess("fiscales")}>
+                  GENERAR CÓDIGO FISCAL
+                </button>
+              )}
               {accessCode && (
                 <div className="access-code">
                   <code>{accessCode}</code>

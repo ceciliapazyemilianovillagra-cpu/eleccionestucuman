@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { UserCheck, Vote, CheckSquare, FileCheck } from "lucide-react";
 import { rpc, formatDateTime } from "./shared";
+import { RoleRoster } from "./RoleRoster";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <p className="empty">Cargando mapa…</p> });
 
@@ -98,6 +99,8 @@ function FiscalesTab({ token }: { token: string }) {
 
 const TABS = [
   { key: "fiscales", label: "FISCALES" },
+  { key: "movilizadores", label: "MOVILIZADORES" },
+  { key: "choferes", label: "CHOFERES" },
   { key: "mapa", label: "MAPA INTERACTIVO" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -124,6 +127,8 @@ export function Comicios({ token, close }: { token: string; close: () => void })
           ))}
         </div>
         {tab === "fiscales" && <FiscalesTab token={token} />}
+        {tab === "movilizadores" && <RoleRoster token={token} role="movilizador" label="Movilizadores" />}
+        {tab === "choferes" && <RoleRoster token={token} role="chofer" label="Choferes" />}
         {tab === "mapa" && <MapView token={token} />}
       </section>
     </main>
