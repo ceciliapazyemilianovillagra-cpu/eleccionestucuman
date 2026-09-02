@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { UserCheck, Vote, CheckSquare, FileCheck } from "lucide-react";
 import { rpc, formatDateTime } from "./shared";
+
+const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <p className="empty">Cargando mapa…</p> });
 
 type Stats = { fiscales_presentes: number; mesas_cerradas: number; votos_nagle: number; votantes_reportados: number };
 type Mesa = {
@@ -93,7 +96,10 @@ function FiscalesTab({ token }: { token: string }) {
   );
 }
 
-const TABS = [{ key: "fiscales", label: "FISCALES" }] as const;
+const TABS = [
+  { key: "fiscales", label: "FISCALES" },
+  { key: "mapa", label: "MAPA INTERACTIVO" },
+] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
 export function Comicios({ token, close }: { token: string; close: () => void }) {
@@ -118,6 +124,7 @@ export function Comicios({ token, close }: { token: string; close: () => void })
           ))}
         </div>
         {tab === "fiscales" && <FiscalesTab token={token} />}
+        {tab === "mapa" && <MapView token={token} />}
       </section>
     </main>
   );

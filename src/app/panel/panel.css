@@ -49,3 +49,10 @@
 .calendar-day.selected { background: var(--navy); color: #fff; }
 .calendar-dot { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--orange); }
 .calendar-day.selected .calendar-dot { background: #fff; }
+
+.map-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.map-filter-btn { border: 1.5px solid; border-radius: 999px; padding: 7px 14px; font-size: 11px; font-weight: 800; cursor: pointer; background: #fff; }
+.map-add-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.map-add-row .active-add { background: var(--orange); color: #4a2c00; }
+.map-wrap { border-radius: 18px; overflow: hidden; box-shadow: 0 5px 20px #17285f0d; }
+.map-wrap .leaflet-container { z-index: 1; }
