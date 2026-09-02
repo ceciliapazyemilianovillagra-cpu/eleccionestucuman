@@ -2,7 +2,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { AppUser, ManagedUser, manageUsers, modules, moduleNames, roleNames } from "./shared";
 
-export function Users({ token, close }: { token: string; close: () => void }) {
+export function Users({ token }: { token: string }) {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -81,15 +81,7 @@ export function Users({ token, close }: { token: string; close: () => void }) {
   }
 
   return (
-    <main className="users-page">
-      <header className="padron-header">
-        <button onClick={close}>←</button>
-        <div>
-          <small>MÓDULO</small>
-          <h1>USUARIOS</h1>
-        </div>
-        <img src="/icon.svg" alt="Logo" />
-      </header>
+    <>
       <section className="users-content">
         <form className="user-form" onSubmit={createUser}>
           <p className="eyebrow">NUEVO ACCESO</p>
@@ -180,7 +172,7 @@ export function Users({ token, close }: { token: string; close: () => void }) {
           }}
         />
       )}
-    </main>
+    </>
   );
 }
 

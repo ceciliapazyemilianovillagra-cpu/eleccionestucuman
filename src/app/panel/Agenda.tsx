@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { rpc, decodeJwtSub, formatDateTime } from "./shared";
 
 type Event = {
@@ -14,11 +14,73 @@ type Event = {
 };
 
 const TYPE_LABEL: Record<string, string> = { reunion: "Reunión", capacitacion: "Capacitación", evento: "Evento", otro: "Otro" };
+const TYPE_ICON: Record<string, string> = { reunion: "🗓", capacitacion: "🎓", evento: "📌", otro: "📎" };
+const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
+
+function dateKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function keyToLocalDate(key: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function MonthCalendar({ events, month, setMonth, selected, setSelected }: { events: Event[]; month: Date; setMonth: (d: Date) => void; selected: string | null; setSelected: (k: string | null) => void }) {
+  const byDay = useMemo(() => {
+    const map: Record<string, Event[]> = {};
+    for (const ev of events) {
+      const k = dateKey(new Date(ev.starts_at));
+      (map[k] ||= []).push(ev);
+    }
+    return map;
+  }, [events]);
+
+  const year = month.getFullYear();
+  const m = month.getMonth();
+  const firstDay = new Date(year, m, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7; // lunes=0
+  const daysInMonth = new Date(year, m + 1, 0).getDate();
+  const todayKey = dateKey(new Date());
+
+  const cells: (Date | null)[] = [...Array(startOffset).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => new Date(year, m, i + 1))];
+
+  return (
+    <div className="calendar">
+      <div className="calendar-head">
+        <button type="button" onClick={() => setMonth(new Date(year, m - 1, 1))}>‹</button>
+        <b>{month.toLocaleDateString("es-AR", { month: "long", year: "numeric" })}</b>
+        <button type="button" onClick={() => setMonth(new Date(year, m + 1, 1))}>›</button>
+      </div>
+      <div className="calendar-grid calendar-weekdays">
+        {WEEKDAYS.map((w, i) => (
+          <span key={i}>{w}</span>
+        ))}
+      </div>
+      <div className="calendar-grid">
+        {cells.map((d, i) => {
+          if (!d) return <span key={i} />;
+          const k = dateKey(d);
+          const has = byDay[k]?.length;
+          return (
+            <button key={i} type="button" className={`calendar-day ${k === todayKey ? "today" : ""} ${selected === k ? "selected" : ""}`} onClick={() => setSelected(selected === k ? null : k)}>
+              {d.getDate()}
+              {has ? <span className="calendar-dot" /> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function Agenda({ token, close }: { token: string; close: () => void }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [view, setView] = useState<"lista" | "calendario">("calendario");
+  const [month, setMonth] = useState(() => new Date());
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [type, setType] = useState<Event["event_type"]>("reunion");
   const [startsAt, setStartsAt] = useState("");
@@ -66,6 +128,8 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
     return acc;
   }, {});
 
+  const dayEvents = selectedDay ? events.filter((ev) => dateKey(new Date(ev.starts_at)) === selectedDay) : null;
+
   return (
     <main className="padron-page">
       <header className="padron-header">
@@ -77,6 +141,10 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
         <img src="/icon.svg" alt="Logo" />
       </header>
       <section className="padron-content">
+        <div className="config-tabs" style={{ marginBottom: 14 }}>
+          <button className={view === "calendario" ? "active" : ""} onClick={() => setView("calendario")}>CALENDARIO</button>
+          <button className={view === "lista" ? "active" : ""} onClick={() => setView("lista")}>LISTA</button>
+        </div>
         <button className="ext-btn full" style={{ marginBottom: 16 }} onClick={() => setShowForm((s) => !s)}>
           {showForm ? "CANCELAR" : "+ NUEVO EVENTO"}
         </button>
@@ -116,14 +184,20 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
           </form>
         )}
         {loading && <p className="empty">Cargando agenda…</p>}
-        {!loading && !events.length && <p className="empty">No hay eventos cargados.</p>}
-        {Object.entries(grouped).map(([day, list]) => (
-          <div key={day} style={{ marginBottom: 14 }}>
-            <p className="eyebrow" style={{ margin: "10px 2px" }}>{day.toUpperCase()}</p>
+
+        {!loading && view === "calendario" && (
+          <>
+            <MonthCalendar events={events} month={month} setMonth={setMonth} selected={selectedDay} setSelected={setSelectedDay} />
+            <p className="eyebrow" style={{ margin: "16px 2px 8px" }}>
+              {selectedDay ? keyToLocalDate(selectedDay).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }).toUpperCase() : "TODOS LOS EVENTOS DEL MES"}
+            </p>
             <div className="results">
-              {list.map((ev) => (
+              {(dayEvents ?? events.filter((ev) => {
+                const d = new Date(ev.starts_at);
+                return d.getFullYear() === month.getFullYear() && d.getMonth() === month.getMonth();
+              })).map((ev) => (
                 <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
-                  <span className="avatar">{ev.event_type === "reunion" ? "🗓" : ev.event_type === "capacitacion" ? "🎓" : "📌"}</span>
+                  <span className="avatar">{TYPE_ICON[ev.event_type]}</span>
                   <div>
                     <b>{ev.title}</b>
                     <p>
@@ -133,9 +207,35 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                   </div>
                 </div>
               ))}
+              {(dayEvents ?? []).length === 0 && selectedDay && <p className="empty">Sin eventos ese día.</p>}
             </div>
-          </div>
-        ))}
+          </>
+        )}
+
+        {!loading && view === "lista" && (
+          <>
+            {!events.length && <p className="empty">No hay eventos cargados.</p>}
+            {Object.entries(grouped).map(([day, list]) => (
+              <div key={day} style={{ marginBottom: 14 }}>
+                <p className="eyebrow" style={{ margin: "10px 2px" }}>{day.toUpperCase()}</p>
+                <div className="results">
+                  {list.map((ev) => (
+                    <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
+                      <span className="avatar">{TYPE_ICON[ev.event_type]}</span>
+                      <div>
+                        <b>{ev.title}</b>
+                        <p>
+                          {TYPE_LABEL[ev.event_type]} · {formatDateTime(ev.starts_at)}
+                          {ev.location ? ` · ${ev.location}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </section>
     </main>
   );

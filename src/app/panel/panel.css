@@ -39,3 +39,16 @@
 .link-row p { margin: 4px 0 8px; font-size: 12px; color: var(--muted); }
 .link-row code { display: block; font-size: 11px; color: var(--blue); background: #f2f8fc; border-radius: 8px; padding: 6px 9px; word-break: break-all; }
 .ext-note { font-size: 12px; color: var(--muted); margin: 14px 2px 0; line-height: 1.5; }
+
+.calendar { background: #fff; border-radius: 18px; padding: 14px; box-shadow: 0 5px 20px #17285f0d; }
+.calendar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.calendar-head b { text-transform: capitalize; color: var(--navy); font-size: 14px; }
+.calendar-head button { border: 0; background: #eaf3fb; color: var(--navy); border-radius: 8px; width: 30px; height: 30px; font-size: 16px; cursor: pointer; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.calendar-weekdays span { font-size: 10px; font-weight: 800; color: var(--muted); padding-bottom: 6px; }
+.calendar-day { position: relative; border: 0; background: transparent; border-radius: 10px; padding: 8px 0; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.calendar-day:hover { background: #f2f8fc; }
+.calendar-day.today { background: var(--sky); color: var(--navy); }
+.calendar-day.selected { background: var(--navy); color: #fff; }
+.calendar-dot { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--orange); }
+.calendar-day.selected .calendar-dot { background: #fff; }

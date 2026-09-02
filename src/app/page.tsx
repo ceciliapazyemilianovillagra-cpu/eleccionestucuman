@@ -4,14 +4,13 @@ import { FormEvent, useEffect, useState } from "react";
 import { SUPABASE_URL, SUPABASE_KEY, AppUser, roleNames } from "./panel/shared";
 import { manageUsers } from "./panel/shared";
 import { Login } from "./panel/Login";
-import { Users } from "./panel/Users";
 import { Padron } from "./panel/Padron";
 import { Colaboradores } from "./panel/Colaboradores";
 import { Agenda } from "./panel/Agenda";
 import { Configuracion } from "./panel/Configuracion";
 import { AlertsBell } from "./panel/AlertsBell";
 
-type ModuleKey = "padron" | "colaboradores" | "agenda" | "users" | "config";
+type ModuleKey = "padron" | "colaboradores" | "agenda" | "config";
 
 export default function Home() {
   const [token, setToken] = useState("");
@@ -124,15 +123,13 @@ export default function Home() {
     { key: "padron", visible: canUsePadron, icon: "⌕", label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
     { key: "colaboradores", visible: canUsePadron, icon: "🤝", label: "COLABORADORES", desc: "Carga interna y export de colaboradores" },
     { key: "agenda", visible: true, icon: "🗓", label: "AGENDA", desc: "Reuniones, capacitaciones y eventos" },
-    { key: "users", visible: isAdmin, icon: "♙", className: "users-card", label: "USUARIOS", desc: "Crear accesos y asignar módulos" },
-    { key: "config", visible: isAdmin, icon: "⚙", label: "CONFIGURACIÓN", desc: "Logs y ajustes de la aplicación" },
+    { key: "config", visible: isAdmin, icon: "⚙", label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
   ];
   const availableModules = MODULES.filter((m) => m.visible);
 
   if (moduleOpen === "padron") return <Padron token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "colaboradores") return <Colaboradores token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "agenda") return <Agenda token={token} close={() => setModuleOpen(null)} />;
-  if (moduleOpen === "users") return <Users token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "config") return <Configuracion token={token} close={() => setModuleOpen(null)} />;
 
   return (
