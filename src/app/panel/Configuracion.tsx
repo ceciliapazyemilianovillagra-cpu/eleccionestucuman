@@ -4,7 +4,7 @@ import { Search, Check, Trash2 } from "lucide-react";
 import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { Users } from "./Users";
 
-type WhatsappRecipient = { id: number; name: string; phone: string; active: boolean };
+type WhatsappRecipient = { id: number; name: string; phone: string; notify_reminder: boolean; notify_digest: boolean };
 
 type LogRow = {
   id: number;
@@ -193,6 +193,8 @@ function RemindersSection({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [notifyReminder, setNotifyReminder] = useState(true);
+  const [notifyDigest, setNotifyDigest] = useState(true);
   const [testPhone, setTestPhone] = useState("");
   const [testMsg, setTestMsg] = useState("");
   const [testing, setTesting] = useState(false);
@@ -220,17 +222,17 @@ function RemindersSection({ token }: { token: string }) {
     await fetch(`${SUPABASE_URL}/rest/v1/whatsapp_recipients`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), phone: cleanPhone, active: true }),
+      body: JSON.stringify({ name: name.trim(), phone: cleanPhone, notify_reminder: notifyReminder, notify_digest: notifyDigest }),
     });
-    setName(""); setPhone("");
+    setName(""); setPhone(""); setNotifyReminder(true); setNotifyDigest(true);
     load();
   }
 
-  async function toggleActive(r: WhatsappRecipient) {
+  async function togglePref(r: WhatsappRecipient, field: "notify_reminder" | "notify_digest") {
     await fetch(`${SUPABASE_URL}/rest/v1/whatsapp_recipients?id=eq.${r.id}`, {
       method: "PATCH",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !r.active }),
+      body: JSON.stringify({ [field]: !r[field] }),
     });
     load();
   }
@@ -269,25 +271,47 @@ function RemindersSection({ token }: { token: string }) {
       <p className="ext-note" style={{ marginTop: 0 }}>
         Estos números reciben por WhatsApp el recordatorio de cada evento (2hs antes) y el resumen de la agenda del día (7am), si hay eventos cargados. Usá el formato con código de país, sin espacios ni "+" (ej: 5493811234567).
       </p>
-      <form className="search-card" onSubmit={addRecipient} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-        <input placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} style={{ flex: 1, minWidth: 140 }} />
-        <input placeholder="Teléfono (ej: 5493811234567)" value={phone} onChange={(e) => setPhone(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
-        <button className="ext-btn">AGREGAR</button>
+      <form className="search-card" onSubmit={addRecipient} style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <input placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} style={{ flex: 1, minWidth: 140 }} />
+          <input placeholder="Teléfono (ej: 5493811234567)" value={phone} onChange={(e) => setPhone(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input type="checkbox" style={{ width: "auto" }} checked={notifyReminder && notifyDigest} onChange={(e) => { setNotifyReminder(e.target.checked); setNotifyDigest(e.target.checked); }} />
+            <span>Todo</span>
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input type="checkbox" style={{ width: "auto" }} checked={notifyDigest} onChange={(e) => setNotifyDigest(e.target.checked)} />
+            <span>Resumen 7am</span>
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input type="checkbox" style={{ width: "auto" }} checked={notifyReminder} onChange={(e) => setNotifyReminder(e.target.checked)} />
+            <span>Recordatorio 2hs antes</span>
+          </label>
+        </div>
+        <button className="ext-btn full">AGREGAR</button>
       </form>
       {loading && <p className="empty">Cargando…</p>}
       {!loading && !rows.length && <p className="empty">No hay números cargados todavía.</p>}
       <div className="results" style={{ marginBottom: 20 }}>
         {rows.map((r) => (
-          <div key={r.id} className="voter-row" style={{ cursor: "default" }}>
+          <div key={r.id} className="voter-row" style={{ cursor: "default", flexWrap: "wrap" }}>
             <span className="avatar">{r.name.slice(0, 1).toUpperCase()}</span>
-            <div>
+            <div style={{ flex: 1, minWidth: 140 }}>
               <b>{r.name}</b>
               <p>{r.phone}</p>
             </div>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, marginRight: 8 }} onClick={(e) => e.stopPropagation()}>
-              <input type="checkbox" style={{ width: "auto" }} checked={r.active} onChange={() => toggleActive(r)} />
-              <span style={{ fontSize: 11, color: "var(--muted)" }}>Activo</span>
-            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginRight: 8 }} onClick={(e) => e.stopPropagation()}>
+              <label style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <input type="checkbox" style={{ width: "auto" }} checked={r.notify_digest} onChange={() => togglePref(r, "notify_digest")} />
+                <span style={{ fontSize: 11, color: "var(--muted)" }}>7am</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <input type="checkbox" style={{ width: "auto" }} checked={r.notify_reminder} onChange={() => togglePref(r, "notify_reminder")} />
+                <span style={{ fontSize: 11, color: "var(--muted)" }}>2hs antes</span>
+              </label>
+            </div>
             <button className="ext-btn secondary" onClick={() => remove(r)} style={{ padding: "8px 10px" }}>
               <Trash2 size={14} strokeWidth={2} />
             </button>
