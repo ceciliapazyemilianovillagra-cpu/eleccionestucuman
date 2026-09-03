@@ -132,8 +132,8 @@ export default function MapView({ token }: { token: string }) {
       </div>
       {adding && !pendingCoord && <p className="ext-note">Tocá el mapa donde querés colocar el punto.</p>}
       {pendingCoord && (
-        <form className="search-card" onSubmit={savePoint} style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <input required placeholder="Nombre del punto" value={label} onChange={(e) => setLabel(e.target.value)} autoFocus />
+        <form className="search-card" onSubmit={savePoint} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <input required placeholder="Nombre del punto" value={label} onChange={(e) => setLabel(e.target.value)} autoFocus style={{ flex: 1, minWidth: 140 }} />
           <button className="ext-btn">GUARDAR</button>
         </form>
       )}

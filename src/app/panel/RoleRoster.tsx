@@ -94,7 +94,7 @@ export function RoleRoster({ token, role, label }: { token: string; role: "movil
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
         <button className="ext-btn full" onClick={() => setAddOpen((v) => !v)}>
           {addOpen ? "CANCELAR" : `+ AGREGAR ${label.toUpperCase()}`}
         </button>
