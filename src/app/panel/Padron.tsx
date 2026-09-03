@@ -25,9 +25,15 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
   const [selected, setSelected] = useState<Voter | null>(null);
   const [message, setMessage] = useState("Buscá por DNI completo, apellido o nombre.");
   const [stats, setStats] = useState<Stats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  function loadStats() {
+    setStatsLoading(true);
+    rpc(token, "padron_stats").then(setStats).catch(() => {}).finally(() => setStatsLoading(false));
+  }
 
   useEffect(() => {
-    rpc(token, "padron_stats").then(setStats).catch(() => {});
+    loadStats();
   }, [token]);
 
   async function search(event?: FormEvent) {
@@ -78,6 +84,9 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
         <img src="/icon.svg" alt="Logo" />
       </header>
       <section className="padron-content">
+        <button className="ext-btn secondary" style={{ marginBottom: 12 }} onClick={loadStats} disabled={statsLoading}>
+          {statsLoading ? "ACTUALIZANDO…" : "ACTUALIZAR DASHBOARD"}
+        </button>
         {stats && (
           <div className="stats-grid">
             <div className="stat-card">

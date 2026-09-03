@@ -62,11 +62,46 @@ export function RoleRoster({ token, role, label }: { token: string; role: "movil
     });
   }
 
+  async function exportExcel() {
+    const XLSX = await import("xlsx");
+    const data = rows.map((r) => ({
+      DNI: r.dni,
+      "Apellido y Nombre": r.apellido_nombre,
+      Mesa: r.mesa ?? "",
+      Circuito: r.circuito_nombre ?? "",
+      "Código": r.has_code ? "Activo" : "Sin código",
+      "Último acceso": r.last_access_at ? new Date(r.last_access_at).toLocaleString("es-AR") : "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, label);
+    XLSX.writeFile(wb, `${label.toLowerCase()}.xlsx`);
+  }
+
+  async function exportPdf() {
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF();
+    doc.text(label, 14, 14);
+    autoTable(doc, {
+      startY: 20,
+      head: [["DNI", "Apellido y Nombre", "Mesa", "Circuito", "Código", "Último acceso"]],
+      body: rows.map((r) => [r.dni, r.apellido_nombre, r.mesa ?? "", r.circuito_nombre ?? "", r.has_code ? "Activo" : "Sin código", r.last_access_at ? new Date(r.last_access_at).toLocaleString("es-AR") : ""]),
+      styles: { fontSize: 8 },
+    });
+    doc.save(`${label.toLowerCase()}.pdf`);
+  }
+
   return (
     <div>
-      <button className="ext-btn full" style={{ marginBottom: 14 }} onClick={() => setAddOpen((v) => !v)}>
-        {addOpen ? "CANCELAR" : `+ AGREGAR ${label.toUpperCase()}`}
-      </button>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        <button className="ext-btn full" onClick={() => setAddOpen((v) => !v)}>
+          {addOpen ? "CANCELAR" : `+ AGREGAR ${label.toUpperCase()}`}
+        </button>
+        <button className="ext-btn secondary" onClick={() => load(query)} disabled={loading}>
+          {loading ? "…" : "ACTUALIZAR"}
+        </button>
+      </div>
       {addOpen && (
         <div className="search-card" style={{ marginBottom: 16 }}>
           <form onSubmit={searchToAdd} className="ext-field-row">
@@ -111,6 +146,14 @@ export function RoleRoster({ token, role, label }: { token: string; role: "movil
       <div className="results-head">
         <b>{label}</b>
         <span>{rows.length} mostrados</span>
+      </div>
+      <div className="export-row">
+        <button className="ext-btn secondary" onClick={exportExcel} disabled={!rows.length}>
+          EXPORTAR EXCEL
+        </button>
+        <button className="ext-btn secondary" onClick={exportPdf} disabled={!rows.length}>
+          EXPORTAR PDF
+        </button>
       </div>
       {loading && <p className="empty">Cargando…</p>}
       {!loading && !rows.length && <p className="empty">No hay {label.toLowerCase()} cargados.</p>}

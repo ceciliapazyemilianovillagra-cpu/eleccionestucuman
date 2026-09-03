@@ -56,8 +56,10 @@ export default function MapView({ token }: { token: string }) {
   const [adding, setAdding] = useState<"bunker" | "punto_caliente" | "otro" | null>(null);
   const [pendingCoord, setPendingCoord] = useState<{ lat: number; lng: number } | null>(null);
   const [label, setLabel] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function load() {
+    setLoading(true);
     const [f, t, headers] = await Promise.all([
       rpc(token, "list_fiscal_locations").catch(() => []),
       rpc(token, "list_transport_locations").catch(() => []),
@@ -67,6 +69,7 @@ export default function MapView({ token }: { token: string }) {
     setTransportes(t || []);
     const pr = await fetch(`${SUPABASE_URL}/rest/v1/map_points?select=*`, { headers }).then((r) => r.json());
     setPoints(Array.isArray(pr) ? pr : []);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -116,6 +119,9 @@ export default function MapView({ token }: { token: string }) {
             {f.label}
           </button>
         ))}
+        <button className="ext-btn secondary" onClick={load} disabled={loading}>
+          {loading ? "…" : "ACTUALIZAR"}
+        </button>
       </div>
       <div className="map-add-row">
         {(["bunker", "punto_caliente", "otro"] as const).map((t) => (

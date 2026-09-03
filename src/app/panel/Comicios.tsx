@@ -39,6 +39,37 @@ function FiscalesTab({ token }: { token: string }) {
     load();
   }, [token]);
 
+  async function exportExcel() {
+    const XLSX = await import("xlsx");
+    const data = mesas.map((m) => ({
+      Mesa: m.mesa,
+      Fiscal: m.fiscal_nombre ?? "",
+      "Presente desde": m.presente_at ? formatDateTime(m.presente_at) : "",
+      "Últ. votantes en mesa": m.last_voter_count ?? "",
+      "Votos Nagle": m.nagle_votes ?? "",
+      "Acta subida": m.acta_path ? "Sí" : "No",
+      "Cerrada": m.closed_at ? formatDateTime(m.closed_at) : "No",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Comicios");
+    XLSX.writeFile(wb, "comicios_fiscales.xlsx");
+  }
+
+  async function exportPdf() {
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF();
+    doc.text("Comicios · Fiscales", 14, 14);
+    autoTable(doc, {
+      startY: 20,
+      head: [["Mesa", "Fiscal", "Votantes", "Nagle", "Acta", "Cerrada"]],
+      body: mesas.map((m) => [m.mesa, m.fiscal_nombre ?? "", m.last_voter_count ?? "", m.nagle_votes ?? "", m.acta_path ? "Sí" : "No", m.closed_at ? formatDateTime(m.closed_at) : "No"]),
+      styles: { fontSize: 8 },
+    });
+    doc.save("comicios_fiscales.pdf");
+  }
+
   return (
     <div>
       {stats && (
@@ -65,9 +96,17 @@ function FiscalesTab({ token }: { token: string }) {
           </div>
         </div>
       )}
-      <button className="ext-btn secondary" style={{ marginBottom: 12 }} onClick={load} disabled={loading}>
-        {loading ? "ACTUALIZANDO…" : "ACTUALIZAR"}
-      </button>
+      <div className="export-row" style={{ marginBottom: 0 }}>
+        <button className="ext-btn secondary" onClick={load} disabled={loading}>
+          {loading ? "ACTUALIZANDO…" : "ACTUALIZAR"}
+        </button>
+        <button className="ext-btn secondary" onClick={exportExcel} disabled={!mesas.length}>
+          EXPORTAR EXCEL
+        </button>
+        <button className="ext-btn secondary" onClick={exportPdf} disabled={!mesas.length}>
+          EXPORTAR PDF
+        </button>
+      </div>
       {!loading && !mesas.length && <p className="empty">Todavía no hay reportes de mesas.</p>}
       <div className="log-list">
         {mesas.map((m) => (

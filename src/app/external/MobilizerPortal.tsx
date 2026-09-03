@@ -194,6 +194,9 @@ export function MobilizerPortal({ fn, label }: { fn: "movilizadores" | "choferes
       <section className="ext-card">
         <h2>Mis cargados</h2>
         <p className="ext-hint">Marcá el traslado de cada persona el día de la elección.</p>
+        <button className="ext-btn secondary" style={{ marginBottom: 10 }} onClick={refreshList}>
+          ACTUALIZAR
+        </button>
         <div className="ext-list-search">
           <Search size={16} strokeWidth={2} />
           <input placeholder="Buscar por nombre o DNI" value={listFilter} onChange={(e) => setListFilter(e.target.value)} />

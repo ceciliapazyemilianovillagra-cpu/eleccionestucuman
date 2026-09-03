@@ -99,10 +99,15 @@ function AlertsSection({ token }: { token: string }) {
 
   return (
     <div>
-      <label className="module-checks" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <input type="checkbox" checked={showResolved} onChange={(e) => setShowResolved(e.target.checked)} style={{ width: "auto" }} />
-        <span>Mostrar también resueltos</span>
-      </label>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+        <label className="module-checks" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input type="checkbox" checked={showResolved} onChange={(e) => setShowResolved(e.target.checked)} style={{ width: "auto" }} />
+          <span>Mostrar también resueltos</span>
+        </label>
+        <button className="ext-btn secondary" onClick={() => load(showResolved)} disabled={loading}>
+          {loading ? "…" : "ACTUALIZAR"}
+        </button>
+      </div>
       {loading && <p className="empty">Cargando…</p>}
       {!loading && !claims.length && <p className="empty">No hay reclamos {showResolved ? "" : "pendientes"}.</p>}
       <div className="log-list">
@@ -132,10 +137,15 @@ function LogsSection({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
-  useEffect(() => {
+  function load() {
+    setLoading(true);
     rpc(token, "list_activity_log", { p_limit: 200 })
       .then(setRows)
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    load();
   }, [token]);
 
   const filtered = rows.filter((r) => {
@@ -146,10 +156,15 @@ function LogsSection({ token }: { token: string }) {
 
   return (
     <>
-      <label className="users-search">
-        <Search size={16} strokeWidth={2} />
-        <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar por módulo, acción o usuario" />
-      </label>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <label className="users-search" style={{ flex: 1, marginBottom: 0 }}>
+          <Search size={16} strokeWidth={2} />
+          <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar por módulo, acción o usuario" />
+        </label>
+        <button className="ext-btn secondary" onClick={load} disabled={loading}>
+          {loading ? "…" : "ACTUALIZAR"}
+        </button>
+      </div>
       {loading && <p className="empty">Cargando…</p>}
       {!loading && !filtered.length && <p className="empty">Sin registros.</p>}
       <div className="log-list">

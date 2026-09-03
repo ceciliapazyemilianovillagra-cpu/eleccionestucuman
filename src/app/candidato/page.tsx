@@ -88,6 +88,9 @@ export default function Candidato() {
 
   return (
     <ExternalShell eyebrow="CANDIDATO" title="Sala de situación" person={person} onLogout={logout}>
+      <button className="ext-btn secondary" style={{ marginBottom: 14 }} onClick={load} disabled={loading}>
+        {loading ? "ACTUALIZANDO…" : "ACTUALIZAR"}
+      </button>
       {loading && !data && <p className="empty">Cargando…</p>}
       {data && (
         <>

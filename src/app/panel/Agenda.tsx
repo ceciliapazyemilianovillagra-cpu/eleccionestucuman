@@ -155,9 +155,14 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
           <button className={view === "calendario" ? "active" : ""} onClick={() => setView("calendario")}>CALENDARIO</button>
           <button className={view === "lista" ? "active" : ""} onClick={() => setView("lista")}>LISTA</button>
         </div>
-        <button className="ext-btn full" style={{ marginBottom: 16 }} onClick={() => setShowForm((s) => !s)}>
-          {showForm ? "CANCELAR" : "+ NUEVO EVENTO"}
-        </button>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          <button className="ext-btn full" onClick={() => setShowForm((s) => !s)}>
+            {showForm ? "CANCELAR" : "+ NUEVO EVENTO"}
+          </button>
+          <button className="ext-btn secondary" onClick={load} disabled={loading}>
+            {loading ? "…" : "ACTUALIZAR"}
+          </button>
+        </div>
         {showForm && (
           <form className="search-card" onSubmit={createEvent} style={{ display: "grid", gap: 10, marginBottom: 16 }}>
             <label>
