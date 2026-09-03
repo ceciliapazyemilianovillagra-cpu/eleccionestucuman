@@ -1,8 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Search, Check } from "lucide-react";
-import { rpc, formatDateTime } from "./shared";
+import { FormEvent, useEffect, useState } from "react";
+import { Search, Check, Trash2 } from "lucide-react";
+import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { Users } from "./Users";
+
+type WhatsappRecipient = { id: number; name: string; phone: string; active: boolean };
 
 type LogRow = {
   id: number;
@@ -186,10 +188,131 @@ function LogsSection({ token }: { token: string }) {
   );
 }
 
+function RemindersSection({ token }: { token: string }) {
+  const [rows, setRows] = useState<WhatsappRecipient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [testPhone, setTestPhone] = useState("");
+  const [testMsg, setTestMsg] = useState("");
+  const [testing, setTesting] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/whatsapp_recipients?select=*&order=created_at.desc`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+      });
+      setRows(await res.json());
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, [token]);
+
+  async function addRecipient(e: FormEvent) {
+    e.preventDefault();
+    const cleanPhone = phone.replace(/[^0-9]/g, "");
+    if (!name.trim() || cleanPhone.length < 8) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/whatsapp_recipients`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), phone: cleanPhone, active: true }),
+    });
+    setName(""); setPhone("");
+    load();
+  }
+
+  async function toggleActive(r: WhatsappRecipient) {
+    await fetch(`${SUPABASE_URL}/rest/v1/whatsapp_recipients?id=eq.${r.id}`, {
+      method: "PATCH",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !r.active }),
+    });
+    load();
+  }
+
+  async function remove(r: WhatsappRecipient) {
+    if (!window.confirm(`¿Quitar a ${r.name} de los recordatorios?`)) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/whatsapp_recipients?id=eq.${r.id}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+    });
+    load();
+  }
+
+  async function sendTest() {
+    const cleanPhone = testPhone.replace(/[^0-9]/g, "");
+    if (cleanPhone.length < 8) return;
+    setTesting(true);
+    setTestMsg("");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/agenda-whatsapp`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "test", phone: cleanPhone }),
+      });
+      const data = await res.json();
+      setTestMsg(res.ok && data.ok ? "Mensaje de prueba enviado correctamente." : `Error: ${JSON.stringify(data.json || data.error || data)}`);
+    } catch (err) {
+      setTestMsg(err instanceof Error ? err.message : "No se pudo enviar la prueba.");
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  return (
+    <div>
+      <p className="ext-note" style={{ marginTop: 0 }}>
+        Estos números reciben por WhatsApp el recordatorio de cada evento (2hs antes) y el resumen de la agenda del día (7am), si hay eventos cargados. Usá el formato con código de país, sin espacios ni "+" (ej: 5493811234567).
+      </p>
+      <form className="search-card" onSubmit={addRecipient} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+        <input placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} style={{ flex: 1, minWidth: 140 }} />
+        <input placeholder="Teléfono (ej: 5493811234567)" value={phone} onChange={(e) => setPhone(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
+        <button className="ext-btn">AGREGAR</button>
+      </form>
+      {loading && <p className="empty">Cargando…</p>}
+      {!loading && !rows.length && <p className="empty">No hay números cargados todavía.</p>}
+      <div className="results" style={{ marginBottom: 20 }}>
+        {rows.map((r) => (
+          <div key={r.id} className="voter-row" style={{ cursor: "default" }}>
+            <span className="avatar">{r.name.slice(0, 1).toUpperCase()}</span>
+            <div>
+              <b>{r.name}</b>
+              <p>{r.phone}</p>
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, marginRight: 8 }} onClick={(e) => e.stopPropagation()}>
+              <input type="checkbox" style={{ width: "auto" }} checked={r.active} onChange={() => toggleActive(r)} />
+              <span style={{ fontSize: 11, color: "var(--muted)" }}>Activo</span>
+            </label>
+            <button className="ext-btn secondary" onClick={() => remove(r)} style={{ padding: "8px 10px" }}>
+              <Trash2 size={14} strokeWidth={2} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="search-card">
+        <b style={{ display: "block", marginBottom: 8 }}>Probar el envío</b>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <input placeholder="Tu número de WhatsApp" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
+          <button className="ext-btn secondary" onClick={sendTest} disabled={testing}>
+            {testing ? "ENVIANDO…" : "ENVIAR PRUEBA"}
+          </button>
+        </div>
+        {testMsg && <p className="ext-note">{testMsg}</p>}
+      </div>
+    </div>
+  );
+}
+
 const TABS = [
   { key: "usuarios", label: "USUARIOS" },
   { key: "alertas", label: "ALERTAS" },
   { key: "links", label: "ENLACES" },
+  { key: "recordatorios", label: "RECORDATORIOS" },
   { key: "logs", label: "LOGS" },
 ] as const;
 export type ConfigTabKey = (typeof TABS)[number]["key"];
@@ -218,6 +341,7 @@ export function Configuracion({ token, close, initialTab }: { token: string; clo
         {tab === "usuarios" && <Users token={token} />}
         {tab === "alertas" && <AlertsSection token={token} />}
         {tab === "links" && <LinksSection />}
+        {tab === "recordatorios" && <RemindersSection token={token} />}
         {tab === "logs" && <LogsSection token={token} />}
       </section>
     </main>

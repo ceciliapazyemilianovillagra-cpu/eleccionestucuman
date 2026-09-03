@@ -1,6 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CalendarDays, GraduationCap, Flag, Paperclip, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, GraduationCap, Flag, Paperclip, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { rpc, decodeJwtSub, formatDateTime } from "./shared";
 
 type Event = {
@@ -12,6 +12,8 @@ type Event = {
   ends_at: string | null;
   location: string | null;
   created_by: string;
+  reminder_sent_at?: string | null;
+  digest_sent_at?: string | null;
 };
 
 const TYPE_LABEL: Record<string, string> = { reunion: "Reunión", capacitacion: "Capacitación", evento: "Evento", otro: "Otro" };
@@ -30,6 +32,15 @@ function dateKey(d: Date) {
 function keyToLocalDate(key: string) {
   const [y, m, d] = key.split("-").map(Number);
   return new Date(y, m - 1, d);
+}
+
+function ReminderBadge({ ev }: { ev: Event }) {
+  if (!ev.reminder_sent_at && !ev.digest_sent_at) return null;
+  return (
+    <span title="Recordatorio de WhatsApp enviado" style={{ marginLeft: 6, color: "#147354", verticalAlign: "middle" }}>
+      <MessageCircle size={13} strokeWidth={2.5} style={{ display: "inline" }} />
+    </span>
+  );
 }
 
 function MonthCalendar({ events, month, setMonth, selected, setSelected }: { events: Event[]; month: Date; setMonth: (d: Date) => void; selected: string | null; setSelected: (k: string | null) => void }) {
@@ -151,6 +162,9 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
         <img src="/icon.svg" alt="Logo" />
       </header>
       <section className="padron-content">
+        <p className="ext-note" style={{ marginBottom: 14 }}>
+          Cada evento avisa por WhatsApp 2hs antes, y todos los días a las 7am se envía un resumen de la agenda del día (si hay eventos). Los números que reciben estos avisos se gestionan en Configuración → Recordatorios.
+        </p>
         <div className="config-tabs" style={{ marginBottom: 14 }}>
           <button className={view === "calendario" ? "active" : ""} onClick={() => setView("calendario")}>CALENDARIO</button>
           <button className={view === "lista" ? "active" : ""} onClick={() => setView("lista")}>LISTA</button>
@@ -214,7 +228,10 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                 <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
                   <span className="avatar"><TYPE_ICON_COMPONENT type={ev.event_type} /></span>
                   <div>
-                    <b>{ev.title}</b>
+                    <b>
+                      {ev.title}
+                      <ReminderBadge ev={ev} />
+                    </b>
                     <p>
                       {TYPE_LABEL[ev.event_type]} · {formatDateTime(ev.starts_at)}
                       {ev.location ? ` · ${ev.location}` : ""}
@@ -238,7 +255,10 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                     <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
                       <span className="avatar"><TYPE_ICON_COMPONENT type={ev.event_type} /></span>
                       <div>
-                        <b>{ev.title}</b>
+                        <b>
+                          {ev.title}
+                          <ReminderBadge ev={ev} />
+                        </b>
                         <p>
                           {TYPE_LABEL[ev.event_type]} · {formatDateTime(ev.starts_at)}
                           {ev.location ? ` · ${ev.location}` : ""}
