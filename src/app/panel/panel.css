@@ -18,6 +18,7 @@
 .ext-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(184,112,42,.18); }
 .ext-btn:active:not(:disabled) { transform: translateY(0); }
 .ext-btn.secondary { background: #eaf3fb; color: var(--navy); }
+.ext-btn.warn { background: #e04b3f; color: #fff; }
 .ext-btn.full { width: 100%; }
 .ext-btn:disabled { opacity: .5; cursor: default; }
 

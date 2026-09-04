@@ -1,6 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
-import { Search, Check, Trash2 } from "lucide-react";
+import { Search, Check, Trash2, AlertTriangle, Database } from "lucide-react";
 import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { Users } from "./Users";
 
@@ -332,11 +332,178 @@ function RemindersSection({ token }: { token: string }) {
   );
 }
 
+const TEST_DATA_TABLES = [
+  "external_sessions",
+  "external_credentials",
+  "mobilizer_voter_links",
+  "internal_notifications",
+  "audit_log",
+  "fiscal_attendance",
+  "fiscal_turnout_reports",
+  "fiscal_closures",
+  "voter_transport_status",
+  "map_points",
+  "person_roles",
+  "voter_profiles",
+  "activity_log",
+];
+
+type UsageStats = {
+  db_size_bytes: number;
+  padron_rows: number;
+  voter_profiles_rows: number;
+  person_roles_rows: number;
+  external_sessions_active: number;
+  activity_last_24h: number;
+  activity_last_7d: number;
+  top_tables: { table_name: string; size_bytes: number }[];
+};
+
+function humanBytes(n: number) {
+  if (n < 1024) return `${n} B`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let v = n / 1024;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(1)} ${units[i]}`;
+}
+
+function SeguridadSection({ token }: { token: string }) {
+  const [confirmText, setConfirmText] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetMsg, setResetMsg] = useState("");
+  const [stats, setStats] = useState<UsageStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  async function loadStats() {
+    setStatsLoading(true);
+    try {
+      setStats(await rpc(token, "system_usage_stats"));
+    } finally {
+      setStatsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadStats();
+  }, [token]);
+
+  async function resetTestData() {
+    if (confirmText.trim().toUpperCase() !== "BORRAR") return;
+    if (!window.confirm("Esto borra definitivamente todos los datos de prueba (roles asignados, sesiones, reclamos, asistencia de fiscales, traslados, logs, etc.). El padrón, la agenda y los usuarios NO se tocan. ¿Confirmás?")) return;
+    setResetting(true);
+    setResetMsg("");
+    const results: Record<string, string> = {};
+    try {
+      for (const table of TEST_DATA_TABLES) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+          method: "DELETE",
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, Prefer: "count=exact" },
+        });
+        const range = res.headers.get("content-range");
+        const count = range ? range.split("/")[1] : (res.ok ? "ok" : "error");
+        results[table] = res.ok ? count : `error ${res.status}`;
+      }
+      await fetch(`${SUPABASE_URL}/rest/v1/activity_log`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "internal", module: "seguridad", action: "reset_test_data", details: results }),
+      });
+      setResetMsg("Datos de prueba borrados correctamente.");
+      setConfirmText("");
+      loadStats();
+    } catch (err) {
+      setResetMsg(err instanceof Error ? err.message : "No se pudo completar el borrado.");
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  return (
+    <div>
+      <div className="search-card" style={{ marginBottom: 20, borderLeft: "4px solid #e04b3f" }}>
+        <b style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <AlertTriangle size={16} strokeWidth={2.5} color="#e04b3f" />
+          Borrar datos de prueba
+        </b>
+        <p className="ext-note" style={{ margin: "0 0 12px" }}>
+          Borra todo lo cargado durante pruebas o entrenamientos de comicios: roles asignados (movilizador/chofer/fiscal/colaborador), códigos y sesiones externas, reclamos, perfiles de votantes, asistencia/reportes/cierres de fiscales, traslados y el historial de acciones.
+          <br />
+          <b>No se toca</b>: el padrón, la agenda y los usuarios internos.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <input placeholder='Escribí BORRAR para confirmar' value={confirmText} onChange={(e) => setConfirmText(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
+          <button className="ext-btn warn" onClick={resetTestData} disabled={resetting || confirmText.trim().toUpperCase() !== "BORRAR"}>
+            {resetting ? "BORRANDO…" : "BORRAR DATOS DE PRUEBA"}
+          </button>
+        </div>
+        {resetMsg && <p className="ext-note">{resetMsg}</p>}
+      </div>
+
+      <div className="search-card">
+        <b style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <Database size={16} strokeWidth={2.5} />
+          Uso de la base de datos
+        </b>
+        {statsLoading && <p className="empty">Cargando…</p>}
+        {stats && (
+          <>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <span className="stat-icon sky">◧</span>
+                <b>{humanBytes(stats.db_size_bytes)}</b>
+                <p>TAMAÑO DE LA BASE</p>
+              </div>
+              <div className="stat-card">
+                <span className="stat-icon green">◧</span>
+                <b>{stats.padron_rows.toLocaleString("es-AR")}</b>
+                <p>FILAS EN PADRÓN</p>
+              </div>
+              <div className="stat-card">
+                <span className="stat-icon orange">◧</span>
+                <b>{stats.external_sessions_active.toLocaleString("es-AR")}</b>
+                <p>SESIONES EXTERNAS ACTIVAS</p>
+              </div>
+              <div className="stat-card">
+                <span className="stat-icon sky">◧</span>
+                <b>{stats.activity_last_24h.toLocaleString("es-AR")}</b>
+                <p>ACCIONES ÚLTIMAS 24HS</p>
+              </div>
+            </div>
+            <p className="eyebrow" style={{ margin: "6px 2px 8px" }}>TABLAS MÁS PESADAS</p>
+            <div className="log-list" style={{ marginBottom: 14 }}>
+              {stats.top_tables?.map((t) => (
+                <div key={t.table_name} className="log-row">
+                  <div>
+                    <b>{t.table_name}</b>
+                    <p>{humanBytes(t.size_bytes)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="ext-note">
+              Esto mide lo que podemos leer directamente de la base (tamaño y actividad). El ancho de banda mensual y los usuarios activos (MAU) — que son los que definen cuándo pasar del plan gratuito al pago — sólo Supabase los mide de forma exacta: revisalos en{" "}
+              <a href="https://supabase.com/dashboard/project/_/settings/billing/usage" target="_blank" rel="noreferrer">
+                el panel de uso de Supabase
+              </a>
+              . Como referencia, el free tier permite 5GB de bandwidth y 50.000 MAU por mes.
+            </p>
+          </>
+        )}
+        <button className="ext-btn secondary" onClick={loadStats} disabled={statsLoading} style={{ marginTop: 8 }}>
+          {statsLoading ? "…" : "ACTUALIZAR"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const TABS = [
   { key: "usuarios", label: "USUARIOS" },
   { key: "alertas", label: "ALERTAS" },
   { key: "links", label: "ENLACES" },
   { key: "recordatorios", label: "RECORDATORIOS" },
+  { key: "seguridad", label: "SEGURIDAD" },
   { key: "logs", label: "LOGS" },
 ] as const;
 export type ConfigTabKey = (typeof TABS)[number]["key"];
@@ -366,6 +533,7 @@ export function Configuracion({ token, close, initialTab }: { token: string; clo
         {tab === "alertas" && <AlertsSection token={token} />}
         {tab === "links" && <LinksSection />}
         {tab === "recordatorios" && <RemindersSection token={token} />}
+        {tab === "seguridad" && <SeguridadSection token={token} />}
         {tab === "logs" && <LogsSection token={token} />}
       </section>
     </main>
