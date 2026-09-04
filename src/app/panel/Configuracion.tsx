@@ -499,17 +499,18 @@ function SeguridadSection({ token }: { token: string }) {
 }
 
 const TABS = [
-  { key: "usuarios", label: "USUARIOS" },
-  { key: "alertas", label: "ALERTAS" },
-  { key: "links", label: "ENLACES" },
-  { key: "recordatorios", label: "RECORDATORIOS" },
-  { key: "seguridad", label: "SEGURIDAD" },
-  { key: "logs", label: "LOGS" },
+  { key: "usuarios", label: "USUARIOS", superadminOnly: false },
+  { key: "alertas", label: "ALERTAS", superadminOnly: false },
+  { key: "links", label: "ENLACES", superadminOnly: false },
+  { key: "recordatorios", label: "RECORDATORIOS", superadminOnly: true },
+  { key: "seguridad", label: "SEGURIDAD", superadminOnly: true },
+  { key: "logs", label: "LOGS", superadminOnly: true },
 ] as const;
 export type ConfigTabKey = (typeof TABS)[number]["key"];
 
-export function Configuracion({ token, close, initialTab }: { token: string; close: () => void; initialTab?: ConfigTabKey }) {
-  const [tab, setTab] = useState<ConfigTabKey>(initialTab ?? "usuarios");
+export function Configuracion({ token, close, initialTab, isSuperadmin }: { token: string; close: () => void; initialTab?: ConfigTabKey; isSuperadmin: boolean }) {
+  const visibleTabs = TABS.filter((t) => isSuperadmin || !t.superadminOnly);
+  const [tab, setTab] = useState<ConfigTabKey>(initialTab && visibleTabs.some((t) => t.key === initialTab) ? initialTab : visibleTabs[0].key);
 
   return (
     <main className="padron-page">
@@ -523,7 +524,7 @@ export function Configuracion({ token, close, initialTab }: { token: string; clo
       </header>
       <section className="padron-content">
         <div className="config-tabs">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button key={t.key} className={tab === t.key ? "active" : ""} onClick={() => setTab(t.key)}>
               {t.label}
             </button>

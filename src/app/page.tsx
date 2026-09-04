@@ -120,7 +120,7 @@ export default function Home() {
     );
 
   const canUsePadron = currentUser.allowed_modules.includes("padron");
-  const isAdmin = currentUser.user_type === "superadmin";
+  const isAdmin = currentUser.user_type === "superadmin" || currentUser.user_type === "administrador";
 
   const MODULES: { key: ModuleKey; visible: boolean; icon: typeof Search; className?: string; label: string; desc: string }[] = [
     { key: "padron", visible: canUsePadron, icon: Search, label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
@@ -135,7 +135,7 @@ export default function Home() {
   if (moduleOpen === "colaboradores") return <Colaboradores token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "agenda") return <Agenda token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "comicios") return <Comicios token={token} close={() => setModuleOpen(null)} />;
-  if (moduleOpen === "config") return <Configuracion token={token} close={() => setModuleOpen(null)} initialTab={configTab} />;
+  if (moduleOpen === "config") return <Configuracion token={token} close={() => setModuleOpen(null)} initialTab={configTab} isSuperadmin={currentUser.user_type === "superadmin"} />;
 
   return (
     <main className="app-shell">

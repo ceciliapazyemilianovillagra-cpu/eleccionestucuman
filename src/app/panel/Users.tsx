@@ -99,10 +99,11 @@ export function Users({ token }: { token: string }) {
             <select value={userType} onChange={(event) => setUserType(event.target.value as AppUser["user_type"])}>
               <option value="operador">Operador</option>
               <option value="dirigente">Dirigente</option>
+              <option value="administrador">Administrador</option>
               <option value="superadmin">Superadministrador</option>
             </select>
           </label>
-          {userType !== "superadmin" && (
+          {userType !== "superadmin" && userType !== "administrador" && (
             <fieldset>
               <legend>Módulos habilitados</legend>
               <div className="module-checks">
@@ -115,7 +116,7 @@ export function Users({ token }: { token: string }) {
               </div>
             </fieldset>
           )}
-          {userType === "superadmin" && <p className="admin-note">El superadministrador tiene acceso a todos los módulos.</p>}
+          {(userType === "superadmin" || userType === "administrador") && <p className="admin-note">Tiene acceso a todos los módulos.</p>}
           <button disabled={saving}>{saving ? "CREANDO…" : "CREAR USUARIO"}</button>
           {message && <p className="form-message">{message}</p>}
         </form>
@@ -228,10 +229,11 @@ function EditUserSheet({ token, user, close, saved }: { token: string; user: Man
           <select value={userType} onChange={(event) => setUserType(event.target.value as AppUser["user_type"])}>
             <option value="operador">Operador</option>
             <option value="dirigente">Dirigente</option>
+            <option value="administrador">Administrador</option>
             <option value="superadmin">Superadministrador</option>
           </select>
         </label>
-        {userType !== "superadmin" && (
+        {userType !== "superadmin" && userType !== "administrador" && (
           <fieldset>
             <legend>Módulos habilitados</legend>
             <div className="module-checks">
