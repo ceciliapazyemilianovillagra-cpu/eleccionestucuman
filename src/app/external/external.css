@@ -19,8 +19,8 @@
   border: 1px solid #eef4f9;
 }
 .ext-login-card img { width: 52px; display: block; margin-bottom: 14px; }
-.ext-login-card small { color: var(--blue); font-weight: 800; letter-spacing: .14em; font-size: 11px; }
-.ext-login-card h1 { color: var(--navy); font-size: 28px; margin: 8px 0 6px; letter-spacing: -.01em; }
+.ext-login-card small { color: var(--blue); font-weight: 700; letter-spacing: .14em; font-size: 11px; font-family: var(--font-display); text-transform: uppercase; }
+.ext-login-card h1 { color: var(--navy); font-size: 28px; margin: 8px 0 6px; letter-spacing: .01em; font-family: var(--font-display); text-transform: uppercase; font-weight: 700; }
 .ext-login-card > p { color: var(--muted); font-size: 14px; margin: 0 0 22px; line-height: 1.5; }
 .ext-login-card label { display: block; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin: 16px 0 6px; }
 .ext-login-card input {
@@ -35,7 +35,7 @@
 }
 .ext-login-card button:active { transform: scale(.98); }
 .ext-login-card button:disabled { opacity: .6; cursor: default; }
-.ext-error { display: block; margin-top: 16px; background: #fff0ef; color: #b52a21; border-radius: 11px; padding: 11px 13px; font-size: 13px; font-weight: 600; }
+.ext-error { display: block; margin-top: 16px; background: #fff0ef; color: #a3231e; border-radius: 11px; padding: 11px 13px; font-size: 13px; font-weight: 600; }
 
 /* ---- Top bar ---- */
 .ext-topbar {
@@ -45,8 +45,8 @@
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
 }
 .ext-topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.ext-topbar small { color: #9fd4f5; font-size: 10px; font-weight: 800; letter-spacing: .16em; }
-.ext-topbar h1 { font-size: 20px; margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60vw; }
+.ext-topbar small { color: #9fd4f5; font-size: 10px; font-weight: 700; letter-spacing: .16em; font-family: var(--font-display); text-transform: uppercase; }
+.ext-topbar h1 { font-size: 21px; margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60vw; font-family: var(--font-display); text-transform: uppercase; font-weight: 700; }
 .ext-iconbtn {
   border: 0; background: #ffffff1f; color: #fff; border-radius: 12px;
   width: 40px; height: 40px; font-size: 18px; flex: none; cursor: pointer;
@@ -75,7 +75,7 @@
 .ext-search input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px #1478b81a; }
 .ext-search button, .ext-btn {
   border: 0; border-radius: 12px; background: var(--navy); color: #fff; padding: 13px 18px;
-  font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; transition: transform .1s ease, box-shadow .15s ease;
+  font-weight: 700; font-size: 13.5px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .03em; cursor: pointer; white-space: nowrap; transition: transform .1s ease, box-shadow .15s ease;
 }
 .ext-search button:hover:not(:disabled), .ext-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(184,112,42,.18); }
 .ext-btn.secondary { background: #eaf3fb; color: var(--navy); }
@@ -94,10 +94,10 @@
 .ext-voter dd { margin: 0; text-align: right; font-weight: 600; color: var(--ink); }
 
 /* ---- Badges ---- */
-.badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .04em; }
-.badge.ok { background: #e3faf0; color: #147354; }
-.badge.warn { background: #fff3e0; color: #a5610a; }
-.badge.danger { background: #fff0ef; color: #b52a21; }
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .04em; }
+.badge.ok { background: #e3faf0; color: #0f6b3a; }
+.badge.warn { background: #fff3e0; color: #8a5407; }
+.badge.danger { background: #fff0ef; color: #a3231e; }
 .badge.neutral { background: #eef3f8; color: var(--muted); }
 
 /* ---- List of loaded voters ---- */
@@ -114,9 +114,9 @@
 .ext-voter-row .dni-small { color: var(--muted); font-size: 11px; }
 .ext-status-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
 .ext-status-btn { border: 1.5px solid #dbe8f1; background: #fff; border-radius: 10px; padding: 9px 4px; font-size: 11px; font-weight: 800; color: var(--ink); cursor: pointer; }
-.ext-status-btn.active-buscado { background: #fff3e0; border-color: #f2a23a; color: #a5610a; }
+.ext-status-btn.active-buscado { background: #fff3e0; border-color: #f2a23a; color: #8a5407; }
 .ext-status-btn.active-votando { background: #e6f0fc; border-color: var(--blue); color: var(--blue); }
-.ext-status-btn.active-devuelta { background: #e3faf0; border-color: var(--green); color: #147354; }
+.ext-status-btn.active-devuelta { background: #e3faf0; border-color: var(--green); color: #0f6b3a; }
 .ext-empty { text-align: center; color: var(--muted); padding: 26px 10px; font-size: 13px; }
 
 /* ---- Fiscales: mesa input, sections ---- */
@@ -125,9 +125,9 @@
 .ext-field-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
 .ext-field-row input { flex: 1; min-width: 140px; }
 .ext-file-btn { display: block; text-align: center; border: 1.5px dashed #b9d3e6; border-radius: 13px; padding: 22px 14px; color: var(--blue); font-weight: 700; font-size: 13px; cursor: pointer; background: #f7fbfe; }
-.ext-file-btn.has-file { border-style: solid; border-color: var(--green); color: #147354; background: #f2fbf7; }
+.ext-file-btn.has-file { border-style: solid; border-color: var(--green); color: #0f6b3a; background: #f2fbf7; }
 .ext-note { font-size: 12px; color: var(--muted); margin: 10px 0 0; line-height: 1.5; }
-.ext-success-msg { background: #e9fbf3; color: #147354; border-radius: 11px; padding: 11px 13px; font-size: 13px; font-weight: 700; margin-top: 12px; }
+.ext-success-msg { background: #e9fbf3; color: #0f6b3a; border-radius: 11px; padding: 11px 13px; font-size: 13px; font-weight: 700; margin-top: 12px; }
 
 @media (max-width: 480px) {
   .ext-search { flex-direction: column; }

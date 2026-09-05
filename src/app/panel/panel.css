@@ -6,13 +6,13 @@
 .stat-icon.green { background: #e3faf0; }
 .stat-icon.orange { background: #fff3e0; }
 .stat-card b { display: block; font-size: 22px; color: var(--navy); font-weight: 800; }
-.stat-card p { margin: 2px 0 0; font-size: 11px; color: var(--muted); font-weight: 700; }
+.stat-card p { margin: 2px 0 0; font-size: 11px; color: var(--muted); font-weight: 700; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .04em; }
 
-.badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 800; flex: none; }
-.badge.ok { background: #e3faf0; color: #147354; }
-.badge.danger { background: #fff0ef; color: #b52a21; }
+.badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; flex: none; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .04em; }
+.badge.ok { background: #e3faf0; color: #0f6b3a; }
+.badge.danger { background: #fff0ef; color: #a3231e; }
 .badge.neutral { background: #eef3f8; color: var(--muted); }
-.badge.sm { padding: 2px 8px; font-size: 8.5px; letter-spacing: .02em; }
+.badge.sm { padding: 2px 8px; font-size: 8.5px; letter-spacing: .03em; }
 
 .voter-row.compact-row { padding: 9px 14px; justify-content: space-between; gap: 8px; }
 .voter-row.compact-row b { font-size: 12.5px; font-weight: 700; }
@@ -22,7 +22,7 @@
 .voter-row.compact p { font-size: 10.5px; }
 
 .export-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
-.ext-btn { border: 0; border-radius: 12px; background: var(--navy); color: #fff; padding: 12px 16px; font-weight: 800; font-size: 12px; cursor: pointer; transition: transform .1s ease, box-shadow .15s ease, opacity .15s ease; }
+.ext-btn { border: 0; border-radius: 12px; background: var(--navy); color: #fff; padding: 12px 16px; font-weight: 700; font-size: 12.5px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .04em; cursor: pointer; transition: transform .1s ease, box-shadow .15s ease, opacity .15s ease; }
 .ext-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(184,112,42,.18); }
 .ext-btn:active:not(:disabled) { transform: translateY(0); }
 .ext-btn.secondary { background: #eaf3fb; color: var(--navy); }
@@ -42,7 +42,7 @@
 .log-row p { margin: 3px 0 0; font-size: 11px; color: var(--muted); }
 
 .config-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
-.config-tabs button { flex: 1 1 auto; min-width: 84px; border: 0; background: #eaf3fb; color: var(--navy); border-radius: 12px; padding: 12px 10px; font-weight: 800; font-size: 11px; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.config-tabs button { flex: 1 1 auto; min-width: 84px; border: 0; background: #eaf3fb; color: var(--navy); border-radius: 12px; padding: 12px 10px; font-weight: 700; font-size: 12px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .04em; cursor: pointer; transition: background .15s ease, color .15s ease; }
 .config-tabs button.active { background: var(--navy); color: #fff; }
 .config-tabs button:hover:not(.active) { background: #dcedf9; }
 
@@ -68,7 +68,7 @@
 .calendar-day.selected .calendar-dot { background: #fff; }
 
 .map-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-.map-filter-btn { border: 1.5px solid; border-radius: 999px; padding: 7px 14px; font-size: 11px; font-weight: 800; cursor: pointer; background: #fff; transition: transform .1s ease; }
+.map-filter-btn { border: 1.5px solid; border-radius: 999px; padding: 7px 14px; font-size: 11px; font-weight: 700; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .03em; cursor: pointer; background: #fff; transition: transform .1s ease; }
 .map-filter-btn:hover { transform: translateY(-1px); }
 .map-add-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .map-add-row .active-add { background: var(--orange); color: #4a2c00; }
