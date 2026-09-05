@@ -18,11 +18,16 @@ type Event = {
 
 const TYPE_LABEL: Record<string, string> = { reunion: "Reunión", capacitacion: "Capacitación", evento: "Evento", otro: "Otro" };
 const TYPE_ICON: Record<string, typeof CalendarDays> = { reunion: CalendarDays, capacitacion: GraduationCap, evento: Flag, otro: Paperclip };
+const TYPE_COLOR: Record<string, string> = { reunion: "#1478b8", capacitacion: "#28b88a", evento: "#e04b3f", otro: "#8b5cf6" };
 const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
 function TYPE_ICON_COMPONENT({ type }: { type: string }) {
   const Icon = TYPE_ICON[type] ?? CalendarDays;
-  return <Icon size={16} strokeWidth={2} />;
+  return (
+    <span className="avatar" style={{ background: TYPE_COLOR[type] ?? "#1478b8", color: "#fff" }}>
+      <Icon size={16} strokeWidth={2} />
+    </span>
+  );
 }
 
 function dateKey(d: Date) {
@@ -226,7 +231,7 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                 return d.getFullYear() === month.getFullYear() && d.getMonth() === month.getMonth();
               })).map((ev) => (
                 <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
-                  <span className="avatar"><TYPE_ICON_COMPONENT type={ev.event_type} /></span>
+                  <TYPE_ICON_COMPONENT type={ev.event_type} />
                   <div>
                     <b>
                       {ev.title}
@@ -253,7 +258,7 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                 <div className="results">
                   {list.map((ev) => (
                     <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
-                      <span className="avatar"><TYPE_ICON_COMPONENT type={ev.event_type} /></span>
+                      <TYPE_ICON_COMPONENT type={ev.event_type} />
                       <div>
                         <b>
                           {ev.title}

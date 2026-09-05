@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { UserCheck, Vote, CheckSquare, FileCheck } from "lucide-react";
-import { rpc, formatDateTime } from "./shared";
+import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY, Voter } from "./shared";
 import { RoleRoster } from "./RoleRoster";
+import { VoterSheet } from "./VoterSheet";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <p className="empty">Cargando mapa…</p> });
 
@@ -23,6 +24,10 @@ function FiscalesTab({ token }: { token: string }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addQuery, setAddQuery] = useState("");
+  const [addResults, setAddResults] = useState<Voter[]>([]);
+  const [selected, setSelected] = useState<Voter | null>(null);
 
   async function load() {
     setLoading(true);
@@ -38,6 +43,17 @@ function FiscalesTab({ token }: { token: string }) {
   useEffect(() => {
     load();
   }, [token]);
+
+  async function searchToAdd(e: FormEvent) {
+    e.preventDefault();
+    if (addQuery.trim().length < 2) return;
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/search_padron`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_query: addQuery, p_limit: 20 }),
+    });
+    setAddResults(await response.json());
+  }
 
   async function exportExcel() {
     const XLSX = await import("xlsx");
@@ -96,6 +112,42 @@ function FiscalesTab({ token }: { token: string }) {
           </div>
         </div>
       )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+        <button className="ext-btn full" onClick={() => setAddOpen((v) => !v)}>
+          {addOpen ? "CANCELAR" : "+ AGREGAR FISCAL"}
+        </button>
+      </div>
+      {addOpen && (
+        <div className="search-card" style={{ marginBottom: 16 }}>
+          <form onSubmit={searchToAdd} className="ext-field-row">
+            <input placeholder="Buscar por DNI o nombre en el padrón" value={addQuery} onChange={(e) => setAddQuery(e.target.value)} />
+            <button className="ext-btn">BUSCAR</button>
+          </form>
+          <div className="results" style={{ marginTop: 10 }}>
+            {addResults.map((v) => (
+              <button
+                key={v.id}
+                className="voter-row compact"
+                onClick={() => {
+                  setSelected(v);
+                  setAddOpen(false);
+                  setAddResults([]);
+                  setAddQuery("");
+                }}
+              >
+                <span className="avatar">{v.apellido_nombre.slice(0, 1)}</span>
+                <div>
+                  <b>{v.apellido_nombre}</b>
+                  <p>
+                    DNI {v.dni} · Mesa {v.mesa}
+                  </p>
+                </div>
+                <span>›</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="export-row" style={{ marginBottom: 0 }}>
         <button className="ext-btn secondary" onClick={load} disabled={loading}>
           {loading ? "ACTUALIZANDO…" : "ACTUALIZAR"}
@@ -132,6 +184,16 @@ function FiscalesTab({ token }: { token: string }) {
           </div>
         ))}
       </div>
+      {selected && (
+        <VoterSheet
+          voter={selected}
+          token={token}
+          close={() => {
+            setSelected(null);
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }

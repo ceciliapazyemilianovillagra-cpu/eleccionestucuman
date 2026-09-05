@@ -159,7 +159,7 @@ export function RoleRoster({ token, role, label }: { token: string; role: "movil
       {!loading && !rows.length && <p className="empty">No hay {label.toLowerCase()} cargados.</p>}
       <div className="results">
         {rows.map((r) => (
-          <button key={r.padron_id} className="voter-row" onClick={() => openExisting(r)}>
+          <button key={r.padron_id} className="voter-row compact" onClick={() => openExisting(r)}>
             <span className="avatar">{r.apellido_nombre.slice(0, 1)}</span>
             <div>
               <b>{r.apellido_nombre}</b>

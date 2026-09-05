@@ -12,6 +12,14 @@
 .badge.ok { background: #e3faf0; color: #147354; }
 .badge.danger { background: #fff0ef; color: #b52a21; }
 .badge.neutral { background: #eef3f8; color: var(--muted); }
+.badge.sm { padding: 2px 8px; font-size: 8.5px; letter-spacing: .02em; }
+
+.voter-row.compact-row { padding: 9px 14px; justify-content: space-between; gap: 8px; }
+.voter-row.compact-row b { font-size: 12.5px; font-weight: 700; }
+.voter-row.compact { padding: 8px 12px; }
+.voter-row.compact .avatar { width: 28px; height: 28px; font-size: 12px; }
+.voter-row.compact b { font-size: 12px; }
+.voter-row.compact p { font-size: 10.5px; }
 
 .export-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
 .ext-btn { border: 0; border-radius: 12px; background: var(--navy); color: #fff; padding: 12px 16px; font-weight: 800; font-size: 12px; cursor: pointer; transition: transform .1s ease, box-shadow .15s ease, opacity .15s ease; }

@@ -138,7 +138,7 @@ export default function MapView({ token }: { token: string }) {
         </form>
       )}
       <div className="map-wrap">
-        <MapContainer center={center} zoom={12} style={{ height: "60vh", width: "100%", borderRadius: 18 }}>
+        <MapContainer center={center} zoom={12} style={{ height: "min(42vh, 360px)", width: "100%", borderRadius: 18 }}>
           <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {adding && <ClickCatcher onClick={(lat, lng) => setPendingCoord({ lat, lng })} />}
           {active.has("fiscal") &&

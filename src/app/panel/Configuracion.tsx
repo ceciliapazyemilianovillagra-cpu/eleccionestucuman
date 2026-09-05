@@ -188,6 +188,8 @@ function LogsSection({ token }: { token: string }) {
   );
 }
 
+type WhatsappStats = { today: number; this_month: number; total: number };
+
 function RemindersSection({ token }: { token: string }) {
   const [rows, setRows] = useState<WhatsappRecipient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,6 +200,7 @@ function RemindersSection({ token }: { token: string }) {
   const [testPhone, setTestPhone] = useState("");
   const [testMsg, setTestMsg] = useState("");
   const [testing, setTesting] = useState(false);
+  const [stats, setStats] = useState<WhatsappStats | null>(null);
 
   async function load() {
     setLoading(true);
@@ -211,8 +214,17 @@ function RemindersSection({ token }: { token: string }) {
     }
   }
 
+  async function loadStats() {
+    try {
+      setStats(await rpc(token, "whatsapp_send_stats"));
+    } catch {
+      setStats(null);
+    }
+  }
+
   useEffect(() => {
     load();
+    loadStats();
   }, [token]);
 
   async function addRecipient(e: FormEvent) {
@@ -259,6 +271,7 @@ function RemindersSection({ token }: { token: string }) {
       });
       const data = await res.json();
       setTestMsg(res.ok && data.ok ? "Mensaje de prueba enviado correctamente." : `Error: ${JSON.stringify(data.json || data.error || data)}`);
+      loadStats();
     } catch (err) {
       setTestMsg(err instanceof Error ? err.message : "No se pudo enviar la prueba.");
     } finally {
@@ -268,8 +281,24 @@ function RemindersSection({ token }: { token: string }) {
 
   return (
     <div>
+      {stats && (
+        <div className="stats-grid" style={{ marginBottom: 14 }}>
+          <div className="stat-card">
+            <b>{stats.today}</b>
+            <p>ENVIADOS HOY</p>
+          </div>
+          <div className="stat-card">
+            <b>{stats.this_month}</b>
+            <p>ESTE MES</p>
+          </div>
+          <div className="stat-card">
+            <b>{stats.total}</b>
+            <p>TOTAL HISTÓRICO</p>
+          </div>
+        </div>
+      )}
       <p className="ext-note" style={{ marginTop: 0 }}>
-        Estos números reciben por WhatsApp el recordatorio de cada evento (2hs antes) y el resumen de la agenda del día (7am), si hay eventos cargados. Usá el formato con código de país, sin espacios ni "+" (ej: 5493811234567).
+        Estos números reciben por WhatsApp el recordatorio de cada evento (2hs antes) y el resumen de la agenda del día (7am), si hay eventos cargados. Usá el formato con código de país, sin espacios ni "+" (ej: 5493811234567). Cada mensaje de WhatsApp fuera del free tier de Meta tiene un costo — el contador de arriba te sirve para estimarlo.
       </p>
       <form className="search-card" onSubmit={addRecipient} style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>

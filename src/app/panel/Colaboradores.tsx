@@ -129,15 +129,9 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
         {!loading && !rows.length && <p className="empty">No hay colaboradores cargados.</p>}
         <div className="results">
           {rows.map((r) => (
-            <div key={r.padron_id} className="voter-row" style={{ cursor: "default" }}>
-              <span className="avatar">{r.apellido_nombre.slice(0, 1)}</span>
-              <div>
-                <b>{r.apellido_nombre}</b>
-                <p>
-                  DNI {r.dni} · Mesa {r.mesa ?? "-"} · Cargado por {r.loaded_by_nombre ?? r.loaded_by_email ?? "—"}
-                </p>
-              </div>
-              <span className={`badge ${r.disputed ? "danger" : "ok"}`}>{r.disputed ? "Reclamado" : "Único"}</span>
+            <div key={r.padron_id} className="voter-row compact-row" style={{ cursor: "default" }} title={`DNI ${r.dni} · Mesa ${r.mesa ?? "-"} · Cargado por ${r.loaded_by_nombre ?? r.loaded_by_email ?? "—"}`}>
+              <b>{r.apellido_nombre}</b>
+              <span className={`badge sm ${r.disputed ? "danger" : "ok"}`}>{r.disputed ? "Reclamado" : "Único"}</span>
             </div>
           ))}
         </div>
