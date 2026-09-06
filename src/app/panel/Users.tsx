@@ -2,6 +2,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, UploadCloud, Download } from "lucide-react";
 import { AppUser, ManagedUser, manageUsers, modules, moduleNames, roleNames } from "./shared";
+import { useRealtime } from "./realtime";
 
 const BULK_CHUNK_SIZE = 25;
 
@@ -49,6 +50,8 @@ export function Users({ token }: { token: string }) {
   useEffect(() => {
     loadUsers();
   }, [token]);
+
+  useRealtime(["app_user_roles"], token, loadUsers);
 
   function toggleModule(module: string) {
     setAllowedModules((current) => (current.includes(module) ? current.filter((item) => item !== module) : [...current, module]));

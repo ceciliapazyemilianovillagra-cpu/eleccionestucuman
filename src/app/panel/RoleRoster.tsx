@@ -2,6 +2,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { SUPABASE_URL, SUPABASE_KEY, Voter, rpc } from "./shared";
 import { VoterSheet } from "./VoterSheet";
+import { useRealtime } from "./realtime";
 
 type RolePerson = {
   padron_id: number;
@@ -36,6 +37,8 @@ export function RoleRoster({ token, role, label }: { token: string; role: "movil
   useEffect(() => {
     load();
   }, [token, role]);
+
+  useRealtime(["person_roles", "external_credentials"], token, () => load(query));
 
   async function searchToAdd(e: FormEvent) {
     e.preventDefault();

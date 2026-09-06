@@ -6,6 +6,7 @@ import { Users } from "./Users";
 import { BulkRoles } from "./BulkRoles";
 import { BulkUbicaciones } from "./BulkUbicaciones";
 import { ScrollTopButton } from "./ScrollTopButton";
+import { useRealtime } from "./realtime";
 
 type WhatsappRecipient = { id: number; name: string; phone: string; notify_reminder: boolean; notify_digest: boolean };
 
@@ -97,6 +98,8 @@ function AlertsSection({ token }: { token: string }) {
     load(showResolved);
   }, [token, showResolved]);
 
+  useRealtime(["internal_notifications"], token, () => load(showResolved));
+
   async function resolve(id: string) {
     await rpc(token, "resolve_voter_claim", { p_id: id }).catch(() => {});
     load(showResolved);
@@ -152,6 +155,8 @@ function LogsSection({ token }: { token: string }) {
   useEffect(() => {
     load();
   }, [token]);
+
+  useRealtime(["activity_log"], token, load);
 
   const filtered = rows.filter((r) => {
     const q = filter.trim().toLowerCase();
@@ -229,6 +234,8 @@ function RemindersSection({ token }: { token: string }) {
     load();
     loadStats();
   }, [token]);
+
+  useRealtime(["whatsapp_recipients"], token, load);
 
   async function addRecipient(e: FormEvent) {
     e.preventDefault();

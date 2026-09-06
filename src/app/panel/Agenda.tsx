@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarDays, GraduationCap, Flag, Paperclip, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { rpc, decodeJwtSub, formatDateTime } from "./shared";
 import { ScrollTopButton } from "./ScrollTopButton";
+import { useRealtime } from "./realtime";
 
 type Event = {
   id: number;
@@ -130,6 +131,8 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
   useEffect(() => {
     load();
   }, [token]);
+
+  useRealtime(["agenda_events"], token, load);
 
   async function createEvent(e: FormEvent) {
     e.preventDefault();

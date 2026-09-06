@@ -4,6 +4,7 @@ import { Users, Vote, Car, ShieldCheck, Landmark, Handshake, UserCheck } from "l
 import { SUPABASE_URL, SUPABASE_KEY, Voter, rpc } from "./shared";
 import { VoterSheet } from "./VoterSheet";
 import { ScrollTopButton } from "./ScrollTopButton";
+import { useRealtime } from "./realtime";
 
 type Stats = { total_votantes: number; total_mesas: number; total_circuitos: number; por_rol: { role: string; count: number }[] };
 
@@ -36,6 +37,8 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
   useEffect(() => {
     loadStats();
   }, [token]);
+
+  useRealtime(["person_roles"], token, loadStats);
 
   async function search(event?: FormEvent) {
     event?.preventDefault();

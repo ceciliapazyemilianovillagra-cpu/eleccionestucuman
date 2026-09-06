@@ -6,6 +6,7 @@ import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY, Voter } from "./shared
 import { RoleRoster } from "./RoleRoster";
 import { VoterSheet } from "./VoterSheet";
 import { ScrollTopButton } from "./ScrollTopButton";
+import { useRealtime } from "./realtime";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <p className="empty">Cargando mapa…</p> });
 
@@ -44,6 +45,8 @@ function FiscalesTab({ token }: { token: string }) {
   useEffect(() => {
     load();
   }, [token]);
+
+  useRealtime(["fiscal_attendance", "fiscal_turnout_reports", "fiscal_closures"], token, load);
 
   async function searchToAdd(e: FormEvent) {
     e.preventDefault();

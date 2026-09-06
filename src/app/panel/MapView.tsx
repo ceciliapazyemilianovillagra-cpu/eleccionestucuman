@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaf
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { SUPABASE_URL, SUPABASE_KEY, rpc, decodeJwtSub, formatDateTime } from "./shared";
+import { useRealtime } from "./realtime";
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -75,6 +76,8 @@ export default function MapView({ token }: { token: string }) {
   useEffect(() => {
     load();
   }, [token]);
+
+  useRealtime(["map_points", "fiscal_attendance", "voter_transport_status"], token, load);
 
   function toggle(key: FilterKey) {
     setActive((prev) => {

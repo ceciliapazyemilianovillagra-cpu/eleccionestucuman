@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Users, CheckCircle2, TriangleAlert } from "lucide-react";
 import { rpc } from "./shared";
 import { ScrollTopButton } from "./ScrollTopButton";
+import { useRealtime } from "./realtime";
 
 type Colaborador = {
   padron_id: number;
@@ -33,6 +34,8 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
   useEffect(() => {
     load();
   }, [token]);
+
+  useRealtime(["person_roles", "mobilizer_voter_links"], token, () => load(query));
 
   const total = rows.length;
   const disputed = rows.filter((r) => r.disputed).length;
