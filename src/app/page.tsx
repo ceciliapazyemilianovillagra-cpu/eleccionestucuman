@@ -122,12 +122,12 @@ export default function Home() {
   const canUsePadron = currentUser.allowed_modules.includes("padron");
   const isAdmin = currentUser.user_type === "superadmin" || currentUser.user_type === "administrador";
 
-  const MODULES: { key: ModuleKey; visible: boolean; icon: typeof Search; className?: string; label: string; desc: string }[] = [
-    { key: "padron", visible: canUsePadron, icon: Search, label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
-    { key: "colaboradores", visible: canUsePadron, icon: Handshake, label: "COLABORADORES", desc: "Carga interna y export de colaboradores" },
-    { key: "agenda", visible: true, icon: CalendarDays, label: "AGENDA", desc: "Reuniones, capacitaciones y eventos" },
-    { key: "comicios", visible: canUsePadron, icon: Landmark, label: "COMICIOS", desc: "Seguimiento de fiscales el día de la elección" },
-    { key: "config", visible: isAdmin, icon: Settings, label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
+  const MODULES: { key: ModuleKey; visible: boolean; icon: typeof Search; color: string; label: string; desc: string }[] = [
+    { key: "padron", visible: canUsePadron, icon: Search, color: "sky", label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
+    { key: "colaboradores", visible: canUsePadron, icon: Handshake, color: "green", label: "COLABORADORES", desc: "Carga interna y export de colaboradores" },
+    { key: "agenda", visible: true, icon: CalendarDays, color: "orange", label: "AGENDA", desc: "Reuniones, capacitaciones y eventos" },
+    { key: "comicios", visible: canUsePadron, icon: Landmark, color: "navy", label: "COMICIOS", desc: "Seguimiento de fiscales el día de la elección" },
+    { key: "config", visible: isAdmin, icon: Settings, color: "muted", label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
   ];
   const availableModules = MODULES.filter((m) => m.visible);
 
@@ -178,8 +178,8 @@ export default function Home() {
             <span>{availableModules.length} disponibles</span>
           </div>
           {availableModules.map((m) => (
-            <button key={m.key} className={`module-card ${m.className ?? ""}`} onClick={() => setModuleOpen(m.key)}>
-              <span className="module-icon">
+            <button key={m.key} className="module-card" onClick={() => setModuleOpen(m.key)}>
+              <span className={`module-icon ${m.color}`}>
                 <m.icon size={22} strokeWidth={2} />
               </span>
               <div>

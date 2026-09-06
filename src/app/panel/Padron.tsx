@@ -104,11 +104,12 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
               <b>{stats.total_mesas.toLocaleString("es-AR")}</b>
               <p>Mesas</p>
             </div>
-            {stats.por_rol.map((r) => {
+            {stats.por_rol.map((r, i) => {
               const RoleIcon = ROLE_ICONS[r.role] ?? UserCheck;
+              const color = ["sky", "orange", "green"][i % 3];
               return (
                 <div className="stat-card" key={r.role}>
-                  <span className="stat-icon sky">
+                  <span className={`stat-icon ${color}`}>
                     <RoleIcon size={18} strokeWidth={2} />
                   </span>
                   <b>{r.count.toLocaleString("es-AR")}</b>
