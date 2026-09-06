@@ -168,9 +168,6 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
         <img src="/icon.svg" alt="Logo" />
       </header>
       <section className="padron-content">
-        <p className="ext-note" style={{ marginBottom: 14 }}>
-          Cada evento avisa por WhatsApp 2hs antes, y todos los días a las 7am se envía un resumen de la agenda del día (si hay eventos). Los números que reciben estos avisos se gestionan en Configuración → Recordatorios.
-        </p>
         <div className="config-tabs" style={{ marginBottom: 14 }}>
           <button className={view === "calendario" ? "active" : ""} onClick={() => setView("calendario")}>CALENDARIO</button>
           <button className={view === "lista" ? "active" : ""} onClick={() => setView("lista")}>LISTA</button>

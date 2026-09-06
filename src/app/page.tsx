@@ -173,10 +173,6 @@ export default function Home() {
           </div>
         </header>
         <section className="module-section">
-          <div className="section-title">
-            <h3>Módulos</h3>
-            <span>{availableModules.length} disponibles</span>
-          </div>
           {availableModules.map((m) => (
             <button key={m.key} className="module-card" onClick={() => setModuleOpen(m.key)}>
               <span className={`module-icon ${m.color}`}>
