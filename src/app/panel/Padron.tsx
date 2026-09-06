@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Users, Vote, Car, ShieldCheck, Landmark, Handshake, UserCheck } from "lucide-react";
 import { SUPABASE_URL, SUPABASE_KEY, Voter, rpc } from "./shared";
 import { VoterSheet } from "./VoterSheet";
+import { ScrollTopButton } from "./ScrollTopButton";
 
 type Stats = { total_votantes: number; total_mesas: number; total_circuitos: number; por_rol: { role: string; count: number }[] };
 
@@ -145,6 +146,7 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
         </div>
       </section>
       {selected && <VoterSheet voter={selected} token={token} close={() => setSelected(null)} />}
+      <ScrollTopButton />
     </main>
   );
 }

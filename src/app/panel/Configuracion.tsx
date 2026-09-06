@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Search, Check, Trash2, AlertTriangle, Database } from "lucide-react";
 import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { Users } from "./Users";
+import { ScrollTopButton } from "./ScrollTopButton";
 
 type WhatsappRecipient = { id: number; name: string; phone: string; notify_reminder: boolean; notify_digest: boolean };
 
@@ -566,6 +567,7 @@ export function Configuracion({ token, close, initialTab, isSuperadmin }: { toke
         {tab === "seguridad" && <SeguridadSection token={token} />}
         {tab === "logs" && <LogsSection token={token} />}
       </section>
+      <ScrollTopButton />
     </main>
   );
 }

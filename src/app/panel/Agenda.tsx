@@ -2,6 +2,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarDays, GraduationCap, Flag, Paperclip, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { rpc, decodeJwtSub, formatDateTime } from "./shared";
+import { ScrollTopButton } from "./ScrollTopButton";
 
 type Event = {
   id: number;
@@ -277,6 +278,7 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
           </>
         )}
       </section>
+      <ScrollTopButton />
     </main>
   );
 }

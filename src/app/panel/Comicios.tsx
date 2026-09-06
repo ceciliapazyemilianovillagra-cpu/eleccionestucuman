@@ -5,6 +5,7 @@ import { UserCheck, Vote, CheckSquare, FileCheck } from "lucide-react";
 import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY, Voter } from "./shared";
 import { RoleRoster } from "./RoleRoster";
 import { VoterSheet } from "./VoterSheet";
+import { ScrollTopButton } from "./ScrollTopButton";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <p className="empty">Cargando mapa…</p> });
 
@@ -232,6 +233,7 @@ export function Comicios({ token, close }: { token: string; close: () => void })
         {tab === "choferes" && <RoleRoster token={token} role="chofer" label="Choferes" />}
         {tab === "mapa" && <MapView token={token} />}
       </section>
+      <ScrollTopButton />
     </main>
   );
 }

@@ -74,11 +74,11 @@
 }
 .ext-search input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px #1478b81a; }
 .ext-search button, .ext-btn {
-  border: 0; border-radius: 12px; background: var(--navy); color: #fff; padding: 13px 18px;
-  font-weight: 700; font-size: 13.5px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .03em; cursor: pointer; white-space: nowrap; transition: transform .1s ease, box-shadow .15s ease;
+  border: 0; border-radius: 12px; background: linear-gradient(155deg, #1177bf, var(--blue)); color: #fff; padding: 13px 18px;
+  font-weight: 700; font-size: 13.5px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .03em; cursor: pointer; white-space: nowrap; box-shadow: 0 5px 14px rgba(12,95,158,.28); transition: transform .1s ease, box-shadow .15s ease;
 }
-.ext-search button:hover:not(:disabled), .ext-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(184,112,42,.18); }
-.ext-btn.secondary { background: #eaf3fb; color: var(--navy); }
+.ext-search button:hover:not(:disabled), .ext-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(12,95,158,.34); }
+.ext-btn.secondary { background: #eaf3fb; color: var(--navy); box-shadow: none; }
 .ext-btn.success { background: var(--green); }
 .ext-btn.warn { background: var(--orange); color: #4a2c00; }
 .ext-btn:disabled { opacity: .55; cursor: default; }

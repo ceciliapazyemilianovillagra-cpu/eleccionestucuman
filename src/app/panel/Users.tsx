@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { AppUser, ManagedUser, manageUsers, modules, moduleNames, roleNames } from "./shared";
 
 export function Users({ token }: { token: string }) {
@@ -13,6 +14,8 @@ export function Users({ token }: { token: string }) {
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState<ManagedUser | null>(null);
   const [userSearch, setUserSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [showList, setShowList] = useState(false);
 
   const visibleUsers = users.filter((user) => {
     const search = userSearch.trim().toLowerCase();
@@ -50,6 +53,8 @@ export function Users({ token }: { token: string }) {
       setUserType("operador");
       setAllowedModules(["padron"]);
       setMessage("Usuario creado correctamente.");
+      setShowCreate(false);
+      setShowList(true);
       await loadUsers();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No se pudo crear el usuario.");
@@ -83,50 +88,55 @@ export function Users({ token }: { token: string }) {
   return (
     <>
       <section className="users-content">
-        <form className="user-form" onSubmit={createUser}>
-          <p className="eyebrow">NUEVO ACCESO</p>
-          <h2>Crear usuario</h2>
-          <label>
-            Correo
-            <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="correo@ejemplo.com" autoComplete="off" />
-          </label>
-          <label>
-            Contraseña
-            <input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo 8 caracteres" autoComplete="new-password" />
-          </label>
-          <label>
-            Tipo de usuario
-            <select value={userType} onChange={(event) => setUserType(event.target.value as AppUser["user_type"])}>
-              <option value="operador">Operador</option>
-              <option value="dirigente">Dirigente</option>
-              <option value="administrador">Administrador</option>
-              <option value="superadmin">Superadministrador</option>
-            </select>
-          </label>
-          {userType !== "superadmin" && userType !== "administrador" && (
-            <fieldset>
-              <legend>Módulos habilitados</legend>
-              <div className="module-checks">
-                {modules.map((module) => (
-                  <label key={module}>
-                    <input type="checkbox" checked={allowedModules.includes(module)} onChange={() => toggleModule(module)} />
-                    <span>{moduleNames[module]}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          )}
-          {(userType === "superadmin" || userType === "administrador") && <p className="admin-note">Tiene acceso a todos los módulos.</p>}
-          <button disabled={saving}>{saving ? "CREANDO…" : "CREAR USUARIO"}</button>
-          {message && <p className="form-message">{message}</p>}
-        </form>
-        <div className="users-list-head">
-          <div>
-            <p className="eyebrow">ACCESOS CREADOS</p>
-            <h2>Usuarios</h2>
-          </div>
-          <span>{users.length}</span>
-        </div>
+        <button type="button" className="collapse-toggle" onClick={() => setShowCreate((v) => !v)}>
+          <span>+ CREAR USUARIO</span>
+          {showCreate ? <ChevronUp size={18} strokeWidth={2.5} /> : <ChevronDown size={18} strokeWidth={2.5} />}
+        </button>
+        {showCreate && (
+          <form className="user-form" onSubmit={createUser}>
+            <p className="eyebrow">NUEVO ACCESO</p>
+            <h2>Crear usuario</h2>
+            <label>
+              Correo
+              <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="correo@ejemplo.com" autoComplete="off" />
+            </label>
+            <label>
+              Contraseña
+              <input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo 8 caracteres" autoComplete="new-password" />
+            </label>
+            <label>
+              Tipo de usuario
+              <select value={userType} onChange={(event) => setUserType(event.target.value as AppUser["user_type"])}>
+                <option value="operador">Operador</option>
+                <option value="dirigente">Dirigente</option>
+                <option value="administrador">Administrador</option>
+                <option value="superadmin">Superadministrador</option>
+              </select>
+            </label>
+            {userType !== "superadmin" && userType !== "administrador" && (
+              <fieldset>
+                <legend>Módulos habilitados</legend>
+                <div className="module-checks">
+                  {modules.map((module) => (
+                    <label key={module}>
+                      <input type="checkbox" checked={allowedModules.includes(module)} onChange={() => toggleModule(module)} />
+                      <span>{moduleNames[module]}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            {(userType === "superadmin" || userType === "administrador") && <p className="admin-note">Tiene acceso a todos los módulos.</p>}
+            <button disabled={saving}>{saving ? "CREANDO…" : "CREAR USUARIO"}</button>
+            {message && <p className="form-message">{message}</p>}
+          </form>
+        )}
+        <button type="button" className="collapse-toggle" onClick={() => setShowList((v) => !v)} style={{ marginTop: 14 }}>
+          <span>USUARIOS ({users.length})</span>
+          {showList ? <ChevronUp size={18} strokeWidth={2.5} /> : <ChevronDown size={18} strokeWidth={2.5} />}
+        </button>
+        {showList && (
+        <>
         <label className="users-search">
           <span>⌕</span>
           <input value={userSearch} onChange={(event) => setUserSearch(event.target.value)} placeholder="Buscar por correo, rol o estado" autoComplete="off" />
@@ -159,6 +169,8 @@ export function Users({ token }: { token: string }) {
             ))}
             {!visibleUsers.length && <p className="empty">No hay usuarios que coincidan.</p>}
           </div>
+        )}
+        </>
         )}
       </section>
       {editing && (

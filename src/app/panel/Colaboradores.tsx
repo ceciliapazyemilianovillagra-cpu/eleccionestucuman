@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Users, CheckCircle2, TriangleAlert } from "lucide-react";
 import { rpc } from "./shared";
+import { ScrollTopButton } from "./ScrollTopButton";
 
 type Colaborador = {
   padron_id: number;
@@ -136,6 +137,7 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
           ))}
         </div>
       </section>
+      <ScrollTopButton />
     </main>
   );
 }
