@@ -5,7 +5,7 @@ import { AppUser, ManagedUser, manageUsers, modules, moduleNames, roleNames } fr
 
 const BULK_CHUNK_SIZE = 25;
 
-type BulkRow = { email: string; user_type: "operador" | "dirigente"; allowed_modules: string[]; error?: string };
+type BulkRow = { email: string; user_type: "operador" | "dirigente"; allowed_modules: string[]; password?: string; error?: string };
 type BulkResult = { email: string; password?: string; status: "created" | "error"; error?: string };
 
 export function Users({ token }: { token: string }) {
@@ -88,8 +88,8 @@ export function Users({ token }: { token: string }) {
   async function downloadTemplate() {
     const XLSX = await import("xlsx");
     const data = [
-      { correo: "juan.perez@ejemplo.com", tipo: "operador", modulos: "padron,fiscales" },
-      { correo: "maria.gomez@ejemplo.com", tipo: "dirigente", modulos: "padron" },
+      { correo: "juan.perez@ejemplo.com", tipo: "operador", modulos: "padron,fiscales", contraseña: "Tucuman2027!" },
+      { correo: "maria.gomez@ejemplo.com", tipo: "dirigente", modulos: "padron", contraseña: "" },
     ];
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -118,16 +118,19 @@ export function Users({ token }: { token: string }) {
           .split(",")
           .map((m) => m.trim().toLowerCase())
           .filter(Boolean);
+        const passwordVal = String(r["contraseña"] ?? r.contrasena ?? r.password ?? "").trim();
 
         let rowError = "";
         if (!/^\S+@\S+\.\S+$/.test(emailVal)) rowError = "Correo inválido";
         else if (!["operador", "dirigente"].includes(tipoVal)) rowError = "Tipo debe ser operador o dirigente";
         else if (!modulosVal.length || !modulosVal.every((m) => modules.includes(m))) rowError = "Módulos inválidos";
+        else if (passwordVal && passwordVal.length < 8) rowError = "Contraseña debe tener al menos 8 caracteres";
 
         return {
           email: emailVal,
           user_type: (tipoVal === "dirigente" ? "dirigente" : "operador") as "operador" | "dirigente",
           allowed_modules: modulosVal,
+          password: passwordVal || undefined,
           error: rowError || undefined,
         };
       });
@@ -149,7 +152,7 @@ export function Users({ token }: { token: string }) {
     const allResults: BulkResult[] = [];
     try {
       for (let i = 0; i < valid.length; i += BULK_CHUNK_SIZE) {
-        const chunk = valid.slice(i, i + BULK_CHUNK_SIZE).map((r) => ({ email: r.email, user_type: r.user_type, allowed_modules: r.allowed_modules }));
+        const chunk = valid.slice(i, i + BULK_CHUNK_SIZE).map((r) => ({ email: r.email, user_type: r.user_type, allowed_modules: r.allowed_modules, password: r.password }));
         const data = await manageUsers(token, { action: "bulk_create", rows: chunk });
         allResults.push(...(data.results || []));
         setBulkResults([...allResults]);
@@ -245,7 +248,7 @@ export function Users({ token }: { token: string }) {
         {showBulk && (
           <div className="search-card" style={{ marginTop: 10, display: "grid", gap: 12 }}>
             <p className="ext-note" style={{ margin: 0 }}>
-              Para crear muchos accesos de una sola vez (operador o dirigente): descargá la plantilla, completá correo/tipo/módulos por fila, y subila acá. La contraseña de cada uno se genera sola — al terminar podés exportar la lista con las contraseñas para repartirlas.
+              Para crear muchos accesos de una sola vez (operador o dirigente): descargá la plantilla, completá correo/tipo/módulos por fila, y subila acá. La columna "contraseña" es opcional: si la dejás vacía se genera una sola automáticamente. Al terminar podés exportar la lista completa (correo + contraseña) para entregarle a cada usuario.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               <button type="button" className="ext-btn secondary" onClick={downloadTemplate}>
