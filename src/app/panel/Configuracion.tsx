@@ -3,6 +3,8 @@ import { FormEvent, useEffect, useState } from "react";
 import { Search, Check, Trash2, AlertTriangle, Database } from "lucide-react";
 import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { Users } from "./Users";
+import { BulkRoles } from "./BulkRoles";
+import { BulkUbicaciones } from "./BulkUbicaciones";
 import { ScrollTopButton } from "./ScrollTopButton";
 
 type WhatsappRecipient = { id: number; name: string; phone: string; notify_reminder: boolean; notify_digest: boolean };
@@ -530,6 +532,8 @@ function SeguridadSection({ token }: { token: string }) {
 
 const TABS = [
   { key: "usuarios", label: "USUARIOS", superadminOnly: false },
+  { key: "roles", label: "ROLES", superadminOnly: false },
+  { key: "ubicaciones", label: "UBICACIONES", superadminOnly: false },
   { key: "alertas", label: "ALERTAS", superadminOnly: false },
   { key: "links", label: "ENLACES", superadminOnly: false },
   { key: "recordatorios", label: "RECORDATORIOS", superadminOnly: true },
@@ -561,6 +565,8 @@ export function Configuracion({ token, close, initialTab, isSuperadmin }: { toke
           ))}
         </div>
         {tab === "usuarios" && <Users token={token} />}
+        {tab === "roles" && <BulkRoles token={token} />}
+        {tab === "ubicaciones" && <BulkUbicaciones token={token} />}
         {tab === "alertas" && <AlertsSection token={token} />}
         {tab === "links" && <LinksSection />}
         {tab === "recordatorios" && <RemindersSection token={token} />}
