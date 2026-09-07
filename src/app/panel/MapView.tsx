@@ -58,6 +58,9 @@ export default function MapView({ token }: { token: string }) {
   const [pendingCoord, setPendingCoord] = useState<{ lat: number; lng: number } | null>(null);
   const [label, setLabel] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editType, setEditType] = useState<"bunker" | "punto_caliente" | "otro">("otro");
 
   async function load() {
     setLoading(true);
@@ -108,6 +111,31 @@ export default function MapView({ token }: { token: string }) {
     await fetch(`${SUPABASE_URL}/rest/v1/map_points?id=eq.${id}`, {
       method: "DELETE",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+    });
+    load();
+  }
+
+  function startEdit(p: MapPoint) {
+    setEditingId(p.id);
+    setEditLabel(p.label);
+    setEditType(p.type);
+  }
+
+  async function saveEdit(id: number) {
+    await fetch(`${SUPABASE_URL}/rest/v1/map_points?id=eq.${id}`, {
+      method: "PATCH",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ label: editLabel, type: editType }),
+    });
+    setEditingId(null);
+    load();
+  }
+
+  async function movePoint(id: number, lat: number, lng: number) {
+    await fetch(`${SUPABASE_URL}/rest/v1/map_points?id=eq.${id}`, {
+      method: "PATCH",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ latitude: lat, longitude: lng }),
     });
     load();
   }
@@ -173,15 +201,44 @@ export default function MapView({ token }: { token: string }) {
           {points
             .filter((p) => active.has(p.type as FilterKey) || (p.type === "otro" && true))
             .map((p) => (
-              <Marker key={`p-${p.id}`} position={[p.latitude, p.longitude]} icon={ICONS[p.type]}>
+              <Marker
+                key={`p-${p.id}`}
+                position={[p.latitude, p.longitude]}
+                icon={ICONS[p.type]}
+                draggable
+                eventHandlers={{ dragend: (e) => { const pos = e.target.getLatLng(); movePoint(p.id, pos.lat, pos.lng); } }}
+              >
                 <Popup>
-                  <b>{p.label}</b>
-                  <br />
-                  {p.type === "bunker" ? "Bunker" : p.type === "punto_caliente" ? "Punto caliente" : "Otro"}
-                  <br />
-                  <button className="ext-btn secondary" style={{ marginTop: 6 }} onClick={() => deletePoint(p.id)}>
-                    BORRAR
-                  </button>
+                  {editingId === p.id ? (
+                    <div style={{ display: "grid", gap: 6, minWidth: 160 }}>
+                      <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} autoFocus />
+                      <select value={editType} onChange={(e) => setEditType(e.target.value as "bunker" | "punto_caliente" | "otro")}>
+                        <option value="bunker">Bunker</option>
+                        <option value="punto_caliente">Punto caliente</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button className="ext-btn" onClick={() => saveEdit(p.id)}>GUARDAR</button>
+                        <button className="ext-btn secondary" onClick={() => setEditingId(null)}>CANCELAR</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <b>{p.label}</b>
+                      <br />
+                      {p.type === "bunker" ? "Bunker" : p.type === "punto_caliente" ? "Punto caliente" : "Otro"}
+                      <br />
+                      <span style={{ fontSize: 11, color: "#667085" }}>Arrastrá el pin para reubicarlo.</span>
+                      <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                        <button className="ext-btn secondary" onClick={() => startEdit(p)}>
+                          EDITAR
+                        </button>
+                        <button className="ext-btn warn" onClick={() => deletePoint(p.id)}>
+                          BORRAR
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </Popup>
               </Marker>
             ))}

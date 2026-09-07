@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Users, CheckCircle2, TriangleAlert } from "lucide-react";
-import { rpc } from "./shared";
+import { rpc, Voter } from "./shared";
 import { ScrollTopButton } from "./ScrollTopButton";
 import { useRealtime } from "./realtime";
+import { VoterSheet } from "./VoterSheet";
 
 type Colaborador = {
   padron_id: number;
@@ -20,6 +21,7 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
   const [rows, setRows] = useState<Colaborador[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<Voter | null>(null);
 
   async function load(q = "") {
     setLoading(true);
@@ -133,13 +135,40 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
         {!loading && !rows.length && <p className="empty">No hay colaboradores cargados.</p>}
         <div className="results">
           {rows.map((r) => (
-            <div key={r.padron_id} className="voter-row compact-row" style={{ cursor: "default" }} title={`DNI ${r.dni} · Mesa ${r.mesa ?? "-"} · Cargado por ${r.loaded_by_nombre ?? r.loaded_by_email ?? "—"}`}>
+            <button
+              key={r.padron_id}
+              className="voter-row compact-row"
+              title={`DNI ${r.dni} · Mesa ${r.mesa ?? "-"} · Cargado por ${r.loaded_by_nombre ?? r.loaded_by_email ?? "—"}`}
+              onClick={() =>
+                setSelected({
+                  id: r.padron_id,
+                  dni: r.dni,
+                  apellido_nombre: r.apellido_nombre,
+                  domicilio: null,
+                  circuito: r.circuito_nombre || "",
+                  circuito_nombre: r.circuito_nombre,
+                  mesa: r.mesa || "",
+                  orden: null,
+                  anio_nacimiento: null,
+                })
+              }
+            >
               <b>{r.apellido_nombre}</b>
               <span className={`badge sm ${r.disputed ? "danger" : "ok"}`}>{r.disputed ? "Reclamado" : "Único"}</span>
-            </div>
+            </button>
           ))}
         </div>
       </section>
+      {selected && (
+        <VoterSheet
+          voter={selected}
+          token={token}
+          close={() => {
+            setSelected(null);
+            load(query);
+          }}
+        />
+      )}
       <ScrollTopButton />
     </main>
   );

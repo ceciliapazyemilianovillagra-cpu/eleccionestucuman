@@ -1,7 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import { Search, Check, Trash2, AlertTriangle, Database } from "lucide-react";
-import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY } from "./shared";
+import { rpc, formatDateTime, copyText, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { Users } from "./Users";
 import { BulkRoles } from "./BulkRoles";
 import { BulkUbicaciones } from "./BulkUbicaciones";
@@ -47,9 +47,10 @@ function LinksSection() {
   }, []);
 
   async function copy(url: string) {
-    await navigator.clipboard.writeText(url);
-    setCopied(url);
-    setTimeout(() => setCopied(null), 2000);
+    const ok = await copyText(url);
+    setCopied(ok ? url : null);
+    if (!ok) window.prompt("Copiá el enlace manualmente:", url);
+    else setTimeout(() => setCopied(null), 2000);
   }
 
   return (

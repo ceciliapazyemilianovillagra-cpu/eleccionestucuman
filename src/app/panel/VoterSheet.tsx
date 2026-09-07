@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { SUPABASE_URL, SUPABASE_KEY, Voter, electoralRoles, decodeJwtSub, rpc } from "./shared";
+import { SUPABASE_URL, SUPABASE_KEY, Voter, electoralRoles, decodeJwtSub, rpc, copyText } from "./shared";
 
 const FISCAL_ROLES = ["fiscal", "fiscal_general", "fiscal_mesa", "fiscal_suplente", "coordinador_circuito", "coordinador_general"];
 
@@ -67,6 +67,9 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
             body: JSON.stringify({ voter_id: voter.id, internal_user_id: uid }),
           });
         }
+      }
+      if (removed.includes("colaborador")) {
+        await fetch(`${SUPABASE_URL}/rest/v1/mobilizer_voter_links?voter_id=eq.${voter.id}`, { method: "DELETE", headers });
       }
       await rpc(token, "log_activity", { p_module: "padron", p_action: "save_voter_profile", p_details: { padron_id: voter.id, roles_added: added, roles_removed: removed } }).catch(() => {});
       setSavedRoles(roles);
@@ -160,8 +163,9 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
                     type="button"
                     aria-label="Copiar código"
                     onClick={async () => {
-                      await navigator.clipboard.writeText(accessCode);
-                      setCopied(true);
+                      const ok = await copyText(accessCode);
+                      if (ok) setCopied(true);
+                      else window.prompt("Copiá el código manualmente:", accessCode);
                     }}
                   >
                     ⧉

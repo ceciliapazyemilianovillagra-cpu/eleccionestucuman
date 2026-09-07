@@ -1,7 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarDays, GraduationCap, Flag, Paperclip, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
-import { rpc, decodeJwtSub, formatDateTime } from "./shared";
+import { rpc, decodeJwtSub, formatDateTime, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { ScrollTopButton } from "./ScrollTopButton";
 import { useRealtime } from "./realtime";
 
@@ -14,6 +14,7 @@ type Event = {
   ends_at: string | null;
   location: string | null;
   created_by: string;
+  reminder_enabled: boolean;
   reminder_sent_at?: string | null;
   digest_sent_at?: string | null;
 };
@@ -41,10 +42,18 @@ function keyToLocalDate(key: string) {
   return new Date(y, m - 1, d);
 }
 
+function toLocalInputValue(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function ReminderBadge({ ev }: { ev: Event }) {
-  if (!ev.reminder_sent_at && !ev.digest_sent_at) return null;
+  if (!ev.reminder_enabled) return null;
+  const sent = ev.reminder_sent_at || ev.digest_sent_at;
   return (
-    <span title="Recordatorio de WhatsApp enviado" style={{ marginLeft: 6, color: "#147354", verticalAlign: "middle" }}>
+    <span title={sent ? "Recordatorio de WhatsApp enviado" : "Recordatorio programado"} style={{ marginLeft: 6, color: sent ? "#147354" : "#8a5407", verticalAlign: "middle" }}>
       <MessageCircle size={13} strokeWidth={2.5} style={{ display: "inline" }} />
     </span>
   );
@@ -102,6 +111,114 @@ function MonthCalendar({ events, month, setMonth, selected, setSelected }: { eve
   );
 }
 
+function EditEventSheet({ event, token, close }: { event: Event; token: string; close: () => void }) {
+  const [title, setTitle] = useState(event.title);
+  const [type, setType] = useState<Event["event_type"]>(event.event_type);
+  const [startsAt, setStartsAt] = useState(toLocalInputValue(event.starts_at));
+  const [endsAt, setEndsAt] = useState(toLocalInputValue(event.ends_at));
+  const [location, setLocation] = useState(event.location ?? "");
+  const [description, setDescription] = useState(event.description ?? "");
+  const [reminderEnabled, setReminderEnabled] = useState(event.reminder_enabled);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setMessage("");
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/agenda_events?id=eq.${event.id}`, {
+        method: "PATCH",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title, event_type: type,
+          starts_at: new Date(startsAt).toISOString(),
+          ends_at: endsAt ? new Date(endsAt).toISOString() : null,
+          location: location || null, description: description || null,
+          reminder_enabled: reminderEnabled,
+        }),
+      });
+      if (!response.ok) throw new Error("No se pudieron guardar los cambios.");
+      close();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "No se pudieron guardar los cambios.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove() {
+    if (!window.confirm(`¿Borrar el evento "${event.title}"?`)) return;
+    setDeleting(true);
+    setMessage("");
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/agenda_events?id=eq.${event.id}`, {
+        method: "DELETE",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("No se pudo borrar el evento.");
+      close();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "No se pudo borrar el evento.");
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div className="sheet-backdrop" onClick={close}>
+      <form className="voter-sheet edit-user-sheet" onSubmit={save} onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-grab" />
+        <div className="sheet-title">
+          <div>
+            <small>EDITAR EVENTO</small>
+            <h2>{event.title}</h2>
+          </div>
+          <button type="button" onClick={close}>×</button>
+        </div>
+        <label>
+          Título
+          <input required value={title} onChange={(e) => setTitle(e.target.value)} />
+        </label>
+        <label>
+          Tipo
+          <select value={type} onChange={(e) => setType(e.target.value as Event["event_type"])}>
+            <option value="reunion">Reunión</option>
+            <option value="capacitacion">Capacitación</option>
+            <option value="evento">Evento</option>
+            <option value="otro">Otro</option>
+          </select>
+        </label>
+        <label>
+          Inicio
+          <input required type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+        </label>
+        <label>
+          Fin (opcional)
+          <input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+        </label>
+        <label>
+          Lugar
+          <input value={location} onChange={(e) => setLocation(e.target.value)} />
+        </label>
+        <label>
+          Descripción
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, flexDirection: "row", marginTop: 14 }}>
+          <input type="checkbox" style={{ width: "auto" }} checked={reminderEnabled} onChange={(e) => setReminderEnabled(e.target.checked)} />
+          Enviar recordatorio por WhatsApp (2hs antes + resumen 7am)
+        </label>
+        <button disabled={saving}>{saving ? "GUARDANDO…" : "GUARDAR CAMBIOS"}</button>
+        <button type="button" className="ext-btn warn full" style={{ marginTop: 10 }} onClick={remove} disabled={deleting}>
+          {deleting ? "BORRANDO…" : "BORRAR EVENTO"}
+        </button>
+        {message && <p className="form-error">{message}</p>}
+      </form>
+    </div>
+  );
+}
+
 export function Agenda({ token, close }: { token: string; close: () => void }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,7 +232,9 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
   const [endsAt, setEndsAt] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [reminderEnabled, setReminderEnabled] = useState(true);
   const [message, setMessage] = useState("");
+  const [editing, setEditing] = useState<Event | null>(null);
   const uid = decodeJwtSub(token);
 
   async function load() {
@@ -138,14 +257,13 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
     e.preventDefault();
     setMessage("");
     try {
-      const { SUPABASE_URL, SUPABASE_KEY } = await import("./shared");
       const response = await fetch(`${SUPABASE_URL}/rest/v1/agenda_events`, {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ title, event_type: type, starts_at: new Date(startsAt).toISOString(), ends_at: endsAt ? new Date(endsAt).toISOString() : null, location: location || null, description: description || null, created_by: uid }),
+        body: JSON.stringify({ title, event_type: type, starts_at: new Date(startsAt).toISOString(), ends_at: endsAt ? new Date(endsAt).toISOString() : null, location: location || null, description: description || null, reminder_enabled: reminderEnabled, created_by: uid }),
       });
       if (!response.ok) throw new Error("No se pudo crear el evento.");
-      setTitle(""); setLocation(""); setDescription(""); setStartsAt(""); setEndsAt(""); setShowForm(false);
+      setTitle(""); setLocation(""); setDescription(""); setStartsAt(""); setEndsAt(""); setReminderEnabled(true); setShowForm(false);
       await load();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "No se pudo crear el evento.");
@@ -214,6 +332,10 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
               Descripción
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
             </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, flexDirection: "row" }}>
+              <input type="checkbox" style={{ width: "auto" }} checked={reminderEnabled} onChange={(e) => setReminderEnabled(e.target.checked)} />
+              Enviar recordatorio por WhatsApp
+            </label>
             <button>GUARDAR EVENTO</button>
             {message && <p className="form-error">{message}</p>}
           </form>
@@ -231,7 +353,7 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                 const d = new Date(ev.starts_at);
                 return d.getFullYear() === month.getFullYear() && d.getMonth() === month.getMonth();
               })).map((ev) => (
-                <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
+                <button key={ev.id} className="voter-row" onClick={() => setEditing(ev)}>
                   <TYPE_ICON_COMPONENT type={ev.event_type} />
                   <div>
                     <b>
@@ -243,7 +365,8 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                       {ev.location ? ` · ${ev.location}` : ""}
                     </p>
                   </div>
-                </div>
+                  <span>›</span>
+                </button>
               ))}
               {(dayEvents ?? []).length === 0 && selectedDay && <p className="empty">Sin eventos ese día.</p>}
             </div>
@@ -258,7 +381,7 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                 <p className="eyebrow" style={{ margin: "10px 2px" }}>{day.toUpperCase()}</p>
                 <div className="results">
                   {list.map((ev) => (
-                    <div key={ev.id} className="voter-row" style={{ cursor: "default" }}>
+                    <button key={ev.id} className="voter-row" onClick={() => setEditing(ev)}>
                       <TYPE_ICON_COMPONENT type={ev.event_type} />
                       <div>
                         <b>
@@ -270,7 +393,8 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
                           {ev.location ? ` · ${ev.location}` : ""}
                         </p>
                       </div>
-                    </div>
+                      <span>›</span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -278,6 +402,16 @@ export function Agenda({ token, close }: { token: string; close: () => void }) {
           </>
         )}
       </section>
+      {editing && (
+        <EditEventSheet
+          event={editing}
+          token={token}
+          close={() => {
+            setEditing(null);
+            load();
+          }}
+        />
+      )}
       <ScrollTopButton />
     </main>
   );

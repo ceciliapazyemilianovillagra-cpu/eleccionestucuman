@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { UploadCloud, Download, Trash2 } from "lucide-react";
+import { UploadCloud, Download, Trash2, Pencil } from "lucide-react";
 import { SUPABASE_URL, SUPABASE_KEY, decodeJwtSub } from "./shared";
 
 const TYPE_LABELS: Record<string, string> = { bunker: "Bunker", punto_caliente: "Punto caliente", otro: "Otro" };
@@ -18,6 +18,12 @@ export function BulkUbicaciones({ token }: { token: string }) {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editType, setEditType] = useState("otro");
+  const [editDescription, setEditDescription] = useState("");
+  const [editLat, setEditLat] = useState("");
+  const [editLng, setEditLng] = useState("");
 
   async function load() {
     setLoading(true);
@@ -123,6 +129,28 @@ export function BulkUbicaciones({ token }: { token: string }) {
     load();
   }
 
+  function startEdit(p: MapPoint) {
+    setEditingId(p.id);
+    setEditLabel(p.label);
+    setEditType(p.type);
+    setEditDescription(p.description ?? "");
+    setEditLat(String(p.latitude));
+    setEditLng(String(p.longitude));
+  }
+
+  async function saveEdit(id: number) {
+    const lat = Number(editLat);
+    const lng = Number(editLng);
+    if (!editLabel.trim() || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/map_points?id=eq.${id}`, {
+      method: "PATCH",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ label: editLabel, type: editType, description: editDescription || null, latitude: lat, longitude: lng }),
+    });
+    setEditingId(null);
+    load();
+  }
+
   return (
     <div>
       <p className="ext-note" style={{ marginTop: 0 }}>
@@ -167,19 +195,45 @@ export function BulkUbicaciones({ token }: { token: string }) {
       {loading && <p className="empty">Cargando…</p>}
       {!loading && !points.length && <p className="empty">No hay ubicaciones cargadas todavía.</p>}
       <div className="results">
-        {points.map((p) => (
-          <div key={p.id} className="voter-row compact" style={{ cursor: "default" }}>
-            <div>
-              <b>{p.label}</b>
-              <p>
-                {TYPE_LABELS[p.type] ?? p.type} · {p.latitude.toFixed(4)}, {p.longitude.toFixed(4)}
+        {points.map((p) =>
+          editingId === p.id ? (
+            <div key={p.id} className="search-card" style={{ display: "grid", gap: 8, marginBottom: 8 }}>
+              <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} placeholder="Etiqueta" />
+              <select value={editType} onChange={(e) => setEditType(e.target.value)}>
+                <option value="bunker">Bunker</option>
+                <option value="punto_caliente">Punto caliente</option>
+                <option value="otro">Otro</option>
+              </select>
+              <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Descripción" rows={2} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={editLat} onChange={(e) => setEditLat(e.target.value)} placeholder="Latitud" style={{ flex: 1 }} />
+                <input value={editLng} onChange={(e) => setEditLng(e.target.value)} placeholder="Longitud" style={{ flex: 1 }} />
+              </div>
+              <p className="ext-note" style={{ margin: 0 }}>
+                Para reubicar arrastrando el pin, hacelo desde Comicios → Mapa Interactivo. Acá también podés escribir la latitud/longitud directamente.
               </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" className="ext-btn full" onClick={() => saveEdit(p.id)}>GUARDAR</button>
+                <button type="button" className="ext-btn secondary" onClick={() => setEditingId(null)}>CANCELAR</button>
+              </div>
             </div>
-            <button className="ext-btn secondary" onClick={() => deletePoint(p.id)} style={{ padding: "8px 10px" }}>
-              <Trash2 size={14} strokeWidth={2} />
-            </button>
-          </div>
-        ))}
+          ) : (
+            <div key={p.id} className="voter-row compact" style={{ cursor: "default" }}>
+              <div>
+                <b>{p.label}</b>
+                <p>
+                  {TYPE_LABELS[p.type] ?? p.type} · {p.latitude.toFixed(4)}, {p.longitude.toFixed(4)}
+                </p>
+              </div>
+              <button className="ext-btn secondary" onClick={() => startEdit(p)} style={{ padding: "8px 10px" }}>
+                <Pencil size={14} strokeWidth={2} />
+              </button>
+              <button className="ext-btn secondary" onClick={() => deletePoint(p.id)} style={{ padding: "8px 10px" }}>
+                <Trash2 size={14} strokeWidth={2} />
+              </button>
+            </div>
+          )
+        )}
       </div>
     </div>
   );
