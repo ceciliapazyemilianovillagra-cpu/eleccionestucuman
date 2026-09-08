@@ -30,6 +30,21 @@ type Article = {
   analyzed_at: string | null;
 };
 
+type Temas = {
+  temas: { tema: string; count: number }[];
+  otros_mencionados: { nombre: string; count: number }[];
+};
+
+type Cobertura = {
+  circuito: string;
+  circuito_nombre: string | null;
+  total_padron: number;
+  movilizadores: number;
+  fiscales: number;
+  colaboradores: number;
+  cobertura_pct: number | null;
+};
+
 const FILTERS = [
   { key: "todos", label: "Todas" },
   { key: "nagle", label: "Nagle" },
@@ -44,6 +59,8 @@ const TONO_BADGE: Record<string, string> = { favorable: "ok", neutro: "neutral",
 export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: string; close: () => void; isSuperadmin: boolean }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [temas, setTemas] = useState<Temas | null>(null);
+  const [cobertura, setCobertura] = useState<Cobertura[]>([]);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("nagle");
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -52,9 +69,16 @@ export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: str
   async function load(f = filter) {
     setLoading(true);
     try {
-      const [s, a] = await Promise.all([rpc(token, "media_monitor_stats"), rpc(token, "media_monitor_articles", { p_filter: f, p_limit: 60 })]);
+      const [s, a, t, c] = await Promise.all([
+        rpc(token, "media_monitor_stats"),
+        rpc(token, "media_monitor_articles", { p_filter: f, p_limit: 60 }),
+        rpc(token, "media_monitor_temas", { p_days: 30 }).catch(() => null),
+        rpc(token, "territorio_cobertura").catch(() => []),
+      ]);
       setStats(s);
       setArticles(a || []);
+      setTemas(t);
+      setCobertura(c || []);
     } catch {
       setStats(null);
       setArticles([]);
@@ -138,6 +162,54 @@ export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: str
               </span>
             </button>
             {message && <p className="ext-note">{message}</p>}
+          </div>
+        )}
+
+        {temas && (temas.temas?.length > 0 || temas.otros_mencionados?.length > 0) && (
+          <div style={{ marginBottom: 16 }}>
+            <p className="bell-popover-title" style={{ margin: "0 0 8px 2px" }}>Temas en la prensa · últimos 30 días</p>
+            {temas.temas?.length > 0 && (
+              <div className="log-list" style={{ marginBottom: temas.otros_mencionados?.length ? 8 : 0 }}>
+                {temas.temas.slice(0, 6).map((t) => (
+                  <div key={t.tema} className="log-row" style={{ cursor: "default" }}>
+                    <span className="badge neutral">{t.count}</span>
+                    <div><b>{t.tema}</b></div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {temas.otros_mencionados?.length > 0 && (
+              <div className="log-list">
+                {temas.otros_mencionados.slice(0, 6).map((o) => (
+                  <div key={o.nombre} className="log-row" style={{ cursor: "default" }}>
+                    <span className="badge sm neutral">{o.count}</span>
+                    <div><b>{o.nombre}</b><p>Mencionado junto a la cobertura política</p></div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {cobertura.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <p className="bell-popover-title" style={{ margin: "0 0 8px 2px" }}>Territorio: circuitos con menor cobertura</p>
+            <p className="ext-note" style={{ marginTop: 0, marginBottom: 8 }}>
+              % de votantes del padrón con algún rol asignado (movilizador, fiscal o colaborador), por circuito.
+            </p>
+            <div className="log-list">
+              {cobertura.slice(0, 8).map((c) => (
+                <div key={c.circuito} className="log-row" style={{ cursor: "default" }}>
+                  <span className={`badge ${c.cobertura_pct != null && c.cobertura_pct < 2 ? "danger" : c.cobertura_pct != null && c.cobertura_pct < 5 ? "neutral" : "ok"}`}>
+                    {c.cobertura_pct != null ? `${c.cobertura_pct}%` : "—"}
+                  </span>
+                  <div>
+                    <b>Circuito {c.circuito}{c.circuito_nombre ? ` · ${c.circuito_nombre}` : ""}</b>
+                    <p>{c.total_padron.toLocaleString("es-AR")} votantes · {c.movilizadores + c.fiscales + c.colaboradores} con rol asignado</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
