@@ -1,8 +1,94 @@
 "use client";
-import { BrainCircuit, Radio, Newspaper, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { RefreshCw, ExternalLink } from "lucide-react";
+import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY } from "./shared";
+import { useRealtime } from "./realtime";
 import { ScrollTopButton } from "./ScrollTopButton";
 
-export function AnalisisAlgoritmico({ close }: { token: string; close: () => void }) {
+type Stats = {
+  total: number;
+  analizadas: number;
+  menciona_tucuman_7d: number;
+  menciona_smt_7d: number;
+  menciona_nagle_7d: number;
+  tono_favorable: number;
+  tono_neutro: number;
+  tono_desfavorable: number;
+};
+
+type Article = {
+  id: number;
+  source_name: string;
+  title: string;
+  link: string;
+  published_at: string | null;
+  mentions_tucuman: boolean;
+  mentions_smt: boolean;
+  mentions_nagle: boolean;
+  tono: "favorable" | "neutro" | "desfavorable" | null;
+  analysis_note: string | null;
+  analyzed_at: string | null;
+};
+
+const FILTERS = [
+  { key: "todos", label: "Todas" },
+  { key: "nagle", label: "Nagle" },
+  { key: "smt", label: "San Miguel" },
+  { key: "tucuman", label: "Tucumán" },
+  { key: "sin_analizar", label: "Sin analizar" },
+] as const;
+
+const TONO_LABEL: Record<string, string> = { favorable: "Favorable", neutro: "Neutro", desfavorable: "Desfavorable" };
+const TONO_BADGE: Record<string, string> = { favorable: "ok", neutro: "neutral", desfavorable: "danger" };
+
+export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: string; close: () => void; isSuperadmin: boolean }) {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("nagle");
+  const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function load(f = filter) {
+    setLoading(true);
+    try {
+      const [s, a] = await Promise.all([rpc(token, "media_monitor_stats"), rpc(token, "media_monitor_articles", { p_filter: f, p_limit: 60 })]);
+      setStats(s);
+      setArticles(a || []);
+    } catch {
+      setStats(null);
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load(filter);
+  }, [token, filter]);
+
+  useRealtime(["media_articles"], token, () => load(filter));
+
+  async function runNow() {
+    setRunning(true);
+    setMessage("");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/media-monitor`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "run_now" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo ejecutar.");
+      setMessage(`Listo: ${data.analyzed} notas analizadas en esta pasada.`);
+      await load(filter);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "No se pudo ejecutar el barrido.");
+    } finally {
+      setRunning(false);
+    }
+  }
+
   return (
     <main className="padron-page">
       <header className="padron-header">
@@ -14,48 +100,75 @@ export function AnalisisAlgoritmico({ close }: { token: string; close: () => voi
         <img src="/icon.svg" alt="Logo" />
       </header>
       <section className="padron-content">
-        <div className="search-card" style={{ display: "grid", gap: 14, textAlign: "center", padding: "32px 20px" }}>
-          <span style={{ margin: "0 auto", width: 56, height: 56, borderRadius: 16, background: "var(--sky)", display: "grid", placeItems: "center", color: "var(--navy)" }}>
-            <BrainCircuit size={26} strokeWidth={2} />
-          </span>
-          <div>
-            <p className="eyebrow" style={{ margin: "0 0 6px" }}>PRÓXIMAMENTE</p>
-            <b style={{ display: "block", color: "var(--navy)", fontSize: 16 }}>Monitoreo automático de medios</b>
+        <p className="ext-note" style={{ marginTop: 0 }}>
+          Barrido diario (automático, 8am) de medios digitales de Tucumán, clasificado con IA: menciones de Tucumán, San Miguel de Tucumán y Ernesto Nagle, con el tono de cada nota.
+        </p>
+
+        {stats && (
+          <div className="stats-grid">
+            <div className="stat-card"><b>{stats.menciona_nagle_7d}</b><p>Nagle · 7 días</p></div>
+            <div className="stat-card"><b>{stats.menciona_smt_7d}</b><p>San Miguel · 7 días</p></div>
+            <div className="stat-card"><b>{stats.menciona_tucuman_7d}</b><p>Tucumán · 7 días</p></div>
+            <div className="stat-card"><b>{stats.total}</b><p>Notas rastreadas</p></div>
           </div>
-          <p className="ext-note" style={{ margin: "0 auto", maxWidth: 340 }}>
-            Este módulo va a rastrear diariamente los medios digitales de Tucumán y contar cuánto y cómo se habla de <b>Tucumán</b>, <b>San Miguel de Tucumán</b> y el <b>concejal Ernesto Nagle</b>, usando IA (Gemini) para clasificar el tono de cada nota.
-          </p>
+        )}
+
+        {stats && stats.tono_favorable + stats.tono_neutro + stats.tono_desfavorable > 0 && (
+          <div className="log-list" style={{ marginBottom: 16 }}>
+            <div className="log-row" style={{ cursor: "default" }}>
+              <span className="badge ok">{stats.tono_favorable}</span>
+              <div><b>Favorable</b></div>
+            </div>
+            <div className="log-row" style={{ cursor: "default" }}>
+              <span className="badge neutral">{stats.tono_neutro}</span>
+              <div><b>Neutro</b></div>
+            </div>
+            <div className="log-row" style={{ cursor: "default" }}>
+              <span className="badge danger">{stats.tono_desfavorable}</span>
+              <div><b>Desfavorable</b></div>
+            </div>
+          </div>
+        )}
+
+        {isSuperadmin && (
+          <div style={{ marginBottom: 16 }}>
+            <button className="ext-btn full" onClick={runNow} disabled={running}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <RefreshCw size={14} strokeWidth={2.5} className={running ? "spin" : ""} /> {running ? "ANALIZANDO…" : "ACTUALIZAR AHORA"}
+              </span>
+            </button>
+            {message && <p className="ext-note">{message}</p>}
+          </div>
+        )}
+
+        <div className="config-tabs" style={{ marginBottom: 14 }}>
+          {FILTERS.map((f) => (
+            <button key={f.key} className={filter === f.key ? "active" : ""} onClick={() => setFilter(f.key)}>
+              {f.label.toUpperCase()}
+            </button>
+          ))}
         </div>
 
-        <p className="eyebrow" style={{ margin: "22px 2px 10px" }}>QUÉ FALTA PARA ACTIVARLO</p>
+        {loading && <p className="empty">Cargando…</p>}
+        {!loading && !articles.length && <p className="empty">No hay notas para este filtro todavía.</p>}
         <div className="log-list">
-          <div className="log-row" style={{ alignItems: "flex-start" }}>
-            <span className="badge neutral">1</span>
-            <div>
-              <b>Lista de medios a rastrear</b>
-              <p>Confirmar los medios digitales tucumanos (y sus RSS) que querés monitorear.</p>
-            </div>
-          </div>
-          <div className="log-row" style={{ alignItems: "flex-start" }}>
-            <span className="badge neutral">2</span>
-            <div>
-              <b>API key de Gemini (gratis)</b>
-              <p>Se genera en Google AI Studio en un par de minutos, y se guarda de forma segura del lado del servidor.</p>
-            </div>
-          </div>
-          <div className="log-row" style={{ alignItems: "flex-start" }}>
-            <span className="badge neutral">3</span>
-            <div>
-              <b>Confirmar dónde va el análisis</b>
-              <p>Menciones por día, tono (favorable/neutro/desfavorable) y el link a cada nota original.</p>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 14, justifyContent: "center", marginTop: 26, color: "var(--muted)" }}>
-          <Newspaper size={18} strokeWidth={1.75} />
-          <Radio size={18} strokeWidth={1.75} />
-          <Sparkles size={18} strokeWidth={1.75} />
+          {articles.map((a) => (
+            <a key={a.id} href={a.link} target="_blank" rel="noreferrer" className="log-row" style={{ alignItems: "flex-start", textDecoration: "none", color: "inherit" }}>
+              {a.tono ? (
+                <span className={`badge ${TONO_BADGE[a.tono]}`}>{TONO_LABEL[a.tono]}</span>
+              ) : (
+                <span className="badge neutral">{a.analyzed_at ? "—" : "Pendiente"}</span>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <b>{a.title}</b>
+                <p>
+                  {a.source_name} {a.published_at ? `· ${formatDateTime(a.published_at)}` : ""}
+                </p>
+                {a.analysis_note && <p style={{ fontStyle: "italic" }}>{a.analysis_note}</p>}
+              </div>
+              <ExternalLink size={14} strokeWidth={2} style={{ flex: "none", marginTop: 3, color: "var(--muted)" }} />
+            </a>
+          ))}
         </div>
       </section>
       <ScrollTopButton />

@@ -25,5 +25,5 @@ html,body{width:100%;max-width:100%;min-height:100%;overflow-x:hidden}body{-webk
 .module-tile.yellow{background:linear-gradient(155deg,#f6d873,#f2c94c);color:#241d03}
 .module-tile.yellow .tile-icon{background:#00000014}
 .module-tile.steel{background:linear-gradient(155deg,#57678a,#425068)}
-.module-tile.indigo{background:linear-gradient(155deg,#3a4a8a,#232f5e)}
+.module-tile.slate{background:linear-gradient(155deg,#8791a8,#5b6478)}
 

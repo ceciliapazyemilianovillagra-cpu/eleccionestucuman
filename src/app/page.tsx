@@ -152,7 +152,7 @@ export default function Home() {
     { key: "agenda", visible: true, icon: CalendarDays, color: "yellow", label: "AGENDA", desc: "Reuniones y capacitaciones" },
     { key: "comicios", visible: canUsePadron, icon: Landmark, color: "steel", label: "COMICIOS", desc: "Fiscales, mapa y traslados" },
     { key: "config", visible: isAdmin, icon: Settings, color: "navy", wide: true, label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
-    { key: "analisis", visible: isAdmin, icon: BrainCircuit, color: "indigo", wide: true, label: "ANÁLISIS ALGORÍTMICO", desc: "Monitoreo de medios con IA" },
+    { key: "analisis", visible: isAdmin, icon: BrainCircuit, color: "slate", wide: true, label: "ANÁLISIS ALGORÍTMICO", desc: "Monitoreo de medios con IA" },
   ];
   const availableModules = MODULES.filter((m) => m.visible);
 
@@ -161,7 +161,7 @@ export default function Home() {
   if (moduleOpen === "agenda") return <Agenda token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "comicios") return <Comicios token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "config") return <Configuracion token={token} close={() => setModuleOpen(null)} initialTab={configTab} isSuperadmin={currentUser.user_type === "superadmin"} />;
-  if (moduleOpen === "analisis") return <AnalisisAlgoritmico token={token} close={() => setModuleOpen(null)} />;
+  if (moduleOpen === "analisis") return <AnalisisAlgoritmico token={token} close={() => setModuleOpen(null)} isSuperadmin={currentUser.user_type === "superadmin"} />;
 
   return (
     <main className="app-shell">
