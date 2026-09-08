@@ -5,6 +5,7 @@ import { rpc, formatDateTime, copyText, SUPABASE_URL, SUPABASE_KEY } from "./sha
 import { Users } from "./Users";
 import { BulkRoles } from "./BulkRoles";
 import { BulkUbicaciones } from "./BulkUbicaciones";
+import { Apariencia } from "./Apariencia";
 import { ScrollTopButton } from "./ScrollTopButton";
 import { useRealtime } from "./realtime";
 
@@ -547,6 +548,7 @@ const TABS = [
   { key: "recordatorios", label: "RECORDATORIOS", superadminOnly: true },
   { key: "seguridad", label: "SEGURIDAD", superadminOnly: true },
   { key: "logs", label: "LOGS", superadminOnly: true },
+  { key: "apariencia", label: "APARIENCIA", superadminOnly: true },
 ] as const;
 export type ConfigTabKey = (typeof TABS)[number]["key"];
 
@@ -579,6 +581,7 @@ export function Configuracion({ token, close, initialTab, isSuperadmin }: { toke
         {tab === "links" && <LinksSection />}
         {tab === "recordatorios" && <RemindersSection token={token} />}
         {tab === "seguridad" && <SeguridadSection token={token} />}
+        {tab === "apariencia" && <Apariencia token={token} />}
         {tab === "logs" && <LogsSection token={token} />}
       </section>
       <ScrollTopButton />

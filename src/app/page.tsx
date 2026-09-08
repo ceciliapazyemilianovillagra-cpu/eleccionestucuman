@@ -11,6 +11,7 @@ import { Agenda } from "./panel/Agenda";
 import { Comicios } from "./panel/Comicios";
 import { Configuracion, ConfigTabKey } from "./panel/Configuracion";
 import { AlertsBell } from "./panel/AlertsBell";
+import { useRealtime } from "./panel/realtime";
 
 type ModuleKey = "padron" | "colaboradores" | "agenda" | "comicios" | "config";
 
@@ -23,6 +24,28 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [moduleOpen, setModuleOpen] = useState<ModuleKey | null>(null);
   const [configTab, setConfigTab] = useState<ConfigTabKey>("usuarios");
+  const [bgUrl, setBgUrl] = useState("");
+  const [bgOpacity, setBgOpacity] = useState(15);
+
+  async function loadAppearance() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/app_settings?select=key,value&key=in.(background_image_url,background_opacity)`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+      });
+      const rows: { key: string; value: string | null }[] = await res.json();
+      setBgUrl(rows.find((r) => r.key === "background_image_url")?.value ?? "");
+      const op = rows.find((r) => r.key === "background_opacity")?.value;
+      setBgOpacity(op ? Number(op) : 15);
+    } catch {
+      /* sin fondo si falla */
+    }
+  }
+
+  useEffect(() => {
+    if (token) loadAppearance();
+  }, [token]);
+
+  useRealtime(["app_settings"], token, loadAppearance);
 
   useEffect(() => {
     let active = true;
@@ -124,10 +147,10 @@ export default function Home() {
 
   const MODULES: { key: ModuleKey; visible: boolean; icon: typeof Search; color: string; label: string; desc: string }[] = [
     { key: "padron", visible: canUsePadron, icon: Search, color: "sky", label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
-    { key: "colaboradores", visible: canUsePadron, icon: Handshake, color: "green", label: "COLABORADORES", desc: "Carga interna y export de colaboradores" },
-    { key: "agenda", visible: true, icon: CalendarDays, color: "orange", label: "AGENDA", desc: "Reuniones, capacitaciones y eventos" },
-    { key: "comicios", visible: canUsePadron, icon: Landmark, color: "navy", label: "COMICIOS", desc: "Seguimiento de fiscales el día de la elección" },
-    { key: "config", visible: isAdmin, icon: Settings, color: "muted", label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
+    { key: "colaboradores", visible: canUsePadron, icon: Handshake, color: "sky", label: "COLABORADORES", desc: "Carga interna y export de colaboradores" },
+    { key: "agenda", visible: true, icon: CalendarDays, color: "sky", label: "AGENDA", desc: "Reuniones, capacitaciones y eventos" },
+    { key: "comicios", visible: canUsePadron, icon: Landmark, color: "sky", label: "COMICIOS", desc: "Seguimiento de fiscales el día de la elección" },
+    { key: "config", visible: isAdmin, icon: Settings, color: "sky", label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
   ];
   const availableModules = MODULES.filter((m) => m.visible);
 
@@ -140,7 +163,8 @@ export default function Home() {
   return (
     <main className="app-shell">
       <section className="mobile-page">
-        <header className="topbar">
+        {bgUrl && <img src={bgUrl} alt="" aria-hidden style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: bgOpacity / 100, zIndex: 0, pointerEvents: "none" }} />}
+        <header className="topbar" style={{ position: "relative", zIndex: 1 }}>
           <div className="brand">
             <img src="/icon.svg" alt="Logo" />
             <div>
@@ -172,7 +196,7 @@ export default function Home() {
             </button>
           </div>
         </header>
-        <section className="module-section">
+        <section className="module-section" style={{ position: "relative", zIndex: 1 }}>
           {availableModules.map((m) => (
             <button key={m.key} className="module-card" onClick={() => setModuleOpen(m.key)}>
               <span className={`module-icon ${m.color}`}>
