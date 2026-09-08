@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Search, Handshake, CalendarDays, Settings, Landmark } from "lucide-react";
+import { Search, Handshake, CalendarDays, Settings, Landmark, BrainCircuit } from "lucide-react";
 import { SUPABASE_URL, SUPABASE_KEY, AppUser, roleNames } from "./panel/shared";
 import { manageUsers } from "./panel/shared";
 import { Login } from "./panel/Login";
@@ -10,10 +10,11 @@ import { Colaboradores } from "./panel/Colaboradores";
 import { Agenda } from "./panel/Agenda";
 import { Comicios } from "./panel/Comicios";
 import { Configuracion, ConfigTabKey } from "./panel/Configuracion";
+import { AnalisisAlgoritmico } from "./panel/AnalisisAlgoritmico";
 import { AlertsBell } from "./panel/AlertsBell";
 import { useRealtime } from "./panel/realtime";
 
-type ModuleKey = "padron" | "colaboradores" | "agenda" | "comicios" | "config";
+type ModuleKey = "padron" | "colaboradores" | "agenda" | "comicios" | "config" | "analisis";
 
 export default function Home() {
   const [token, setToken] = useState("");
@@ -151,6 +152,7 @@ export default function Home() {
     { key: "agenda", visible: true, icon: CalendarDays, color: "yellow", label: "AGENDA", desc: "Reuniones y capacitaciones" },
     { key: "comicios", visible: canUsePadron, icon: Landmark, color: "steel", label: "COMICIOS", desc: "Fiscales, mapa y traslados" },
     { key: "config", visible: isAdmin, icon: Settings, color: "navy", wide: true, label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
+    { key: "analisis", visible: isAdmin, icon: BrainCircuit, color: "indigo", wide: true, label: "ANÁLISIS ALGORÍTMICO", desc: "Monitoreo de medios con IA" },
   ];
   const availableModules = MODULES.filter((m) => m.visible);
 
@@ -159,6 +161,7 @@ export default function Home() {
   if (moduleOpen === "agenda") return <Agenda token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "comicios") return <Comicios token={token} close={() => setModuleOpen(null)} />;
   if (moduleOpen === "config") return <Configuracion token={token} close={() => setModuleOpen(null)} initialTab={configTab} isSuperadmin={currentUser.user_type === "superadmin"} />;
+  if (moduleOpen === "analisis") return <AnalisisAlgoritmico token={token} close={() => setModuleOpen(null)} />;
 
   return (
     <main className="app-shell">
