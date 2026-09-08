@@ -27,3 +27,29 @@ html,body{width:100%;max-width:100%;min-height:100%;overflow-x:hidden}body{-webk
 .module-tile.steel{background:linear-gradient(155deg,#57678a,#425068)}
 .module-tile.slate{background:linear-gradient(155deg,#8791a8,#5b6478)}
 
+/* Versión de escritorio (PC/Chrome): se usa para carga masiva y trabajo prolongado, así que se abandona el marco de "celular" y se aprovecha el ancho real. */
+@media(min-width:900px){
+  .login-page,.app-shell{padding:32px}
+  .mobile-page{width:min(96%,1180px);min-height:auto;border-radius:22px;box-shadow:0 26px 80px #17285f1f}
+  .module-section{padding:22px 32px 26px}
+  .module-grid{grid-template-columns:repeat(4,1fr);gap:14px}
+  .module-tile{min-height:118px}
+  .module-tile.wide{grid-column:span 2}
+  .topbar,.padron-header{padding:22px 32px}
+  .padron-content,.users-content{width:min(94%,1180px);padding:28px 0}
+  .search-card,.user-form{padding:22px 26px}
+  .results{grid-template-columns:repeat(2,1fr);gap:10px}
+  .users-list{grid-template-columns:repeat(2,1fr);gap:10px}
+  .config-tabs button{flex:0 1 auto}
+  .stats-grid{grid-template-columns:repeat(4,1fr)}
+  .map-wrap .leaflet-container,.map-wrap{height:min(60vh,520px)!important}
+  .sheet-backdrop{align-items:center;padding:24px}
+  .voter-sheet{border-radius:24px;max-height:85vh}
+  .role-checks{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .module-checks{grid-template-columns:repeat(3,1fr)}
+}
+@media(min-width:1300px){
+  .module-grid{grid-template-columns:repeat(5,1fr)}
+  .results,.users-list{grid-template-columns:repeat(3,1fr)}
+}
+
