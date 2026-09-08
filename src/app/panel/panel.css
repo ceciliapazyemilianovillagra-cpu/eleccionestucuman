@@ -33,7 +33,16 @@
 .bell-btn { position: relative; border: 0; background: #ffffff19; color: #fff; border-radius: 10px; width: 40px; height: 40px; display: grid; place-items: center; cursor: pointer; transition: background .15s ease; }
 .bell-btn:hover:not(:disabled) { background: #ffffff30; }
 .bell-btn:disabled { opacity: .5; cursor: default; }
-.bell-badge { position: absolute; top: -4px; right: -4px; background: var(--orange); color: #4a2c00; font-size: 10px; font-weight: 800; border-radius: 999px; min-width: 17px; height: 17px; display: grid; place-items: center; padding: 0 3px; }
+.bell-badge { position: absolute; top: -4px; right: -4px; background: var(--gold); color: #3a2f05; font-size: 10px; font-weight: 800; border-radius: 999px; min-width: 17px; height: 17px; display: grid; place-items: center; padding: 0 3px; }
+.bell-semaforo { position: absolute; bottom: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--navy); }
+.bell-semaforo-inline { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.bell-popover-backdrop { position: fixed; inset: 0; z-index: 39; }
+.bell-popover { position: absolute; top: calc(100% + 10px); right: 0; width: min(260px, 82vw); background: #fff; border-radius: 14px; box-shadow: 0 16px 34px rgba(23,40,95,.22); padding: 10px; z-index: 40; }
+.bell-popover-row { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 0; background: none; padding: 9px 6px; border-radius: 9px; font-size: 12.5px; color: var(--ink); cursor: pointer; }
+.bell-popover-row:hover { background: #f2f5fa; }
+.bell-popover-divider { height: 1px; background: #edf1f5; margin: 4px 0; }
+.bell-popover-title { margin: 6px 6px 2px; font-family: var(--font-display); text-transform: uppercase; letter-spacing: .04em; font-size: 10.5px; color: var(--muted); font-weight: 700; }
+.bell-popover-status { margin: 8px 6px 2px; font-size: 11.5px; font-weight: 700; }
 
 .log-list { display: grid; gap: 8px; }
 .log-row { background: #fff; border-radius: 13px; padding: 11px 13px; display: flex; align-items: center; gap: 10px; box-shadow: 0 3px 12px rgba(184,112,42,.10), 0 1px 4px rgba(23,40,95,.05); transition: box-shadow .15s ease; }

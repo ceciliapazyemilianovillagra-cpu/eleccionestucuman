@@ -145,12 +145,12 @@ export default function Home() {
   const canUsePadron = currentUser.allowed_modules.includes("padron");
   const isAdmin = currentUser.user_type === "superadmin" || currentUser.user_type === "administrador";
 
-  const MODULES: { key: ModuleKey; visible: boolean; icon: typeof Search; color: string; label: string; desc: string }[] = [
-    { key: "padron", visible: canUsePadron, icon: Search, color: "sky", label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
-    { key: "colaboradores", visible: canUsePadron, icon: Handshake, color: "sky", label: "COLABORADORES", desc: "Carga interna y export de colaboradores" },
-    { key: "agenda", visible: true, icon: CalendarDays, color: "sky", label: "AGENDA", desc: "Reuniones, capacitaciones y eventos" },
-    { key: "comicios", visible: canUsePadron, icon: Landmark, color: "sky", label: "COMICIOS", desc: "Seguimiento de fiscales el día de la elección" },
-    { key: "config", visible: isAdmin, icon: Settings, color: "sky", label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
+  const MODULES: { key: ModuleKey; visible: boolean; icon: typeof Search; color: string; wide?: boolean; label: string; desc: string }[] = [
+    { key: "padron", visible: canUsePadron, icon: Search, color: "blue", label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
+    { key: "colaboradores", visible: canUsePadron, icon: Handshake, color: "bluelight", label: "COLABORADORES", desc: "Carga interna y export" },
+    { key: "agenda", visible: true, icon: CalendarDays, color: "yellow", label: "AGENDA", desc: "Reuniones y capacitaciones" },
+    { key: "comicios", visible: canUsePadron, icon: Landmark, color: "steel", label: "COMICIOS", desc: "Fiscales, mapa y traslados" },
+    { key: "config", visible: isAdmin, icon: Settings, color: "navy", wide: true, label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },
   ];
   const availableModules = MODULES.filter((m) => m.visible);
 
@@ -176,6 +176,7 @@ export default function Home() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <AlertsBell
               token={token}
+              isSuperadmin={currentUser.user_type === "superadmin"}
               onOpenAlerts={
                 isAdmin
                   ? () => {
@@ -197,18 +198,19 @@ export default function Home() {
           </div>
         </header>
         <section className="module-section" style={{ position: "relative", zIndex: 1 }}>
-          {availableModules.map((m) => (
-            <button key={m.key} className="module-card" onClick={() => setModuleOpen(m.key)}>
-              <span className={`module-icon ${m.color}`}>
-                <m.icon size={22} strokeWidth={2} />
-              </span>
-              <div>
-                <b>{m.label}</b>
-                <p>{m.desc}</p>
-              </div>
-              <span className="arrow">›</span>
-            </button>
-          ))}
+          <div className="module-grid">
+            {availableModules.map((m) => (
+              <button key={m.key} className={`module-tile ${m.color} ${m.wide ? "wide" : ""}`} onClick={() => setModuleOpen(m.key)}>
+                <span className="tile-icon">
+                  <m.icon size={20} strokeWidth={2} />
+                </span>
+                <div>
+                  <b>{m.label}</b>
+                  <p>{m.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
           {!availableModules.length && <p className="empty">No tenés módulos habilitados. Consultá al administrador.</p>}
         </section>
       </section>
