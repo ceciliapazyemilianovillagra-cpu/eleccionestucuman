@@ -164,7 +164,7 @@ export default function Home() {
     <main className="app-shell">
       <section className="mobile-page">
         {bgUrl && <img src={bgUrl} alt="" aria-hidden style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: bgOpacity / 100, zIndex: 0, pointerEvents: "none" }} />}
-        <header className="topbar" style={{ position: "relative", zIndex: 1 }}>
+        <header className="topbar" style={{ position: "relative", zIndex: 5 }}>
           <div className="brand">
             <img src="/icon.svg" alt="Logo" />
             <div>
