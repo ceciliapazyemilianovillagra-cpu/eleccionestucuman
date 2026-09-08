@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMapEvents } from "react-leaflet";
+import type { Feature } from "geojson";
+import type { Layer, PathOptions } from "leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { SUPABASE_URL, SUPABASE_KEY, rpc, decodeJwtSub, formatDateTime } from "./shared";
@@ -35,6 +37,15 @@ const STATUS_LABEL: Record<string, string> = { buscado: "Buscado", votando: "Vot
 type FiscalLoc = { mesa: string; fiscal_nombre: string; latitude: number; longitude: number; marked_at: string };
 type TransportLoc = { voter_id: number; voter_nombre: string; mobilizer_nombre: string | null; status: string; latitude: number; longitude: number; marked_at: string };
 type MapPoint = { id: number; type: "bunker" | "punto_caliente" | "otro"; label: string; description: string | null; latitude: number; longitude: number };
+type Cobertura = { circuito: string; circuito_nombre: string | null; total_padron: number; movilizadores: number; fiscales: number; colaboradores: number; cobertura_pct: number | null };
+
+function coberturaColor(pct: number | null) {
+  if (pct == null) return "#9aa5b8";
+  if (pct < 2) return "#a3231e";
+  if (pct < 5) return "#e0873f";
+  if (pct < 10) return "#a9822c";
+  return "#147a4c";
+}
 
 const FILTERS = [
   { key: "fiscal", label: "Fiscales", color: "#1478b8" },
@@ -61,6 +72,9 @@ export default function MapView({ token }: { token: string }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editType, setEditType] = useState<"bunker" | "punto_caliente" | "otro">("otro");
+  const [circuitosGeo, setCircuitosGeo] = useState<GeoJSON.FeatureCollection | null>(null);
+  const [cobertura, setCobertura] = useState<Record<string, Cobertura>>({});
+  const [showCircuitos, setShowCircuitos] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -79,6 +93,24 @@ export default function MapView({ token }: { token: string }) {
   useEffect(() => {
     load();
   }, [token]);
+
+  useEffect(() => {
+    rpc(token, "territorio_cobertura")
+      .then((rows: Cobertura[]) => {
+        const map: Record<string, Cobertura> = {};
+        for (const r of rows || []) map[r.circuito] = r;
+        setCobertura(map);
+      })
+      .catch(() => setCobertura({}));
+  }, [token]);
+
+  useEffect(() => {
+    if (!showCircuitos || circuitosGeo) return;
+    fetch("/data/circuitos-tucuman.geojson")
+      .then((r) => r.json())
+      .then(setCircuitosGeo)
+      .catch(() => setCircuitosGeo(null));
+  }, [showCircuitos, circuitosGeo]);
 
   useRealtime(["map_points", "fiscal_attendance", "voter_transport_status"], token, load);
 
@@ -150,10 +182,22 @@ export default function MapView({ token }: { token: string }) {
             {f.label}
           </button>
         ))}
+        <button
+          className="map-filter-btn"
+          style={{ borderColor: "#17285f", color: showCircuitos ? "#fff" : "#17285f", background: showCircuitos ? "#17285f" : "#fff" }}
+          onClick={() => setShowCircuitos((v) => !v)}
+        >
+          Circuitos
+        </button>
         <button className="ext-btn secondary" onClick={load} disabled={loading}>
           {loading ? "…" : "ACTUALIZAR"}
         </button>
       </div>
+      {showCircuitos && (
+        <p className="ext-note" style={{ marginTop: -4 }}>
+          Límites de circuitos electorales (fuente pública, simplificados). Color = % de cobertura territorial (movilizadores/fiscales/colaboradores sobre el padrón de ese circuito).
+        </p>
+      )}
       <div className="map-add-row">
         {(["bunker", "punto_caliente", "otro"] as const).map((t) => (
           <button key={t} className={`ext-btn secondary ${adding === t ? "active-add" : ""}`} onClick={() => setAdding(adding === t ? null : t)}>
@@ -172,6 +216,24 @@ export default function MapView({ token }: { token: string }) {
         <MapContainer center={center} zoom={12} style={{ height: "min(42vh, 360px)", width: "100%", borderRadius: 18 }}>
           <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {adding && <ClickCatcher onClick={(lat, lng) => setPendingCoord({ lat, lng })} />}
+          {showCircuitos && circuitosGeo && (
+            <GeoJSON
+              key="circuitos"
+              data={circuitosGeo}
+              style={(feature?: Feature): PathOptions => {
+                const code = String(feature?.properties?.circuito ?? "").replace(/^0+/, "");
+                const c = cobertura[code];
+                return { color: "#17285f", weight: 1, fillColor: coberturaColor(c?.cobertura_pct ?? null), fillOpacity: 0.35 };
+              }}
+              onEachFeature={(feature: Feature, layer: Layer) => {
+                const code = String(feature.properties?.circuito ?? "").replace(/^0+/, "");
+                const c = cobertura[code];
+                const pctTxt = c?.cobertura_pct != null ? `${c.cobertura_pct}%` : "sin datos";
+                const nombre = c?.circuito_nombre ? ` · ${c.circuito_nombre}` : "";
+                layer.bindTooltip(`Circuito ${code}${nombre}<br>Cobertura: ${pctTxt}`, { sticky: true });
+              }}
+            />
+          )}
           {active.has("fiscal") &&
             fiscales.map((f) => (
               <Marker key={`f-${f.mesa}`} position={[f.latitude, f.longitude]} icon={ICONS.fiscal}>
