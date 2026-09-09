@@ -35,8 +35,8 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
     setRoles((current) => (current.includes(role) ? current.filter((item) => item !== role) : [...current, role]));
   }
 
-  async function generateAccess(fn: "movilizadores" | "choferes" | "fiscales" | "candidato") {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
+  async function generateAccess() {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/comicios`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ action: "provision", padron_id: voter.id }),
@@ -134,29 +134,15 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
               ))}
             </div>
           </fieldset>
-          {(roles.includes("movilizador") || roles.includes("chofer") || roles.includes("candidato") || roles.some((r) => FISCAL_ROLES.includes(r))) && (
+          {(roles.includes("movilizador") || roles.includes("chofer") || roles.includes("dirigente") || roles.includes("candidato") || roles.some((r) => FISCAL_ROLES.includes(r))) && (
             <section className="mobilizer-access">
               <small>ACCESO EXTERNO</small>
-              {roles.includes("movilizador") && (
-                <button type="button" onClick={() => generateAccess("movilizadores")}>
-                  GENERAR CÓDIGO MOVILIZADOR
-                </button>
-              )}
-              {roles.includes("chofer") && (
-                <button type="button" onClick={() => generateAccess("choferes")}>
-                  GENERAR CÓDIGO CHOFER
-                </button>
-              )}
-              {roles.some((r) => FISCAL_ROLES.includes(r)) && (
-                <button type="button" onClick={() => generateAccess("fiscales")}>
-                  GENERAR CÓDIGO FISCAL
-                </button>
-              )}
-              {roles.includes("candidato") && (
-                <button type="button" onClick={() => generateAccess("candidato")}>
-                  GENERAR CÓDIGO CANDIDATO
-                </button>
-              )}
+              <p className="ext-note" style={{ margin: "0 0 10px" }}>
+                Un solo código le da acceso a eleccionestucuman.vercel.app/comicios, donde ve lo que su rol o roles habiliten.
+              </p>
+              <button type="button" onClick={generateAccess}>
+                GENERAR CÓDIGO DE ACCESO
+              </button>
               {accessCode && (
                 <div className="access-code">
                   <code>{accessCode}</code>
