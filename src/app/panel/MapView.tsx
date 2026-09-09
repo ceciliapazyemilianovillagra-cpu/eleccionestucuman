@@ -317,7 +317,7 @@ export default function MapView({ token }: { token: string }) {
                 key={`p-${p.id}`}
                 position={[p.latitude, p.longitude]}
                 icon={ICONS[p.type]}
-                draggable
+                draggable={editingId === p.id}
                 eventHandlers={{ dragend: (e) => { const pos = e.target.getLatLng(); movePoint(p.id, pos.lat, pos.lng); } }}
               >
                 <Popup>
@@ -330,6 +330,7 @@ export default function MapView({ token }: { token: string }) {
                         <option value="otro">Otro</option>
                         <option value="escuela">Escuela</option>
                       </select>
+                      <span style={{ fontSize: 11, color: "#667085" }}>Ahora podés arrastrar el pin para reubicarlo.</span>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button className="ext-btn" onClick={() => saveEdit(p.id)}>GUARDAR</button>
                         <button className="ext-btn secondary" onClick={() => setEditingId(null)}>CANCELAR</button>
@@ -346,8 +347,6 @@ export default function MapView({ token }: { token: string }) {
                           <span style={{ fontSize: 11, color: "#667085" }}>{p.description}</span>
                         </>
                       )}
-                      <br />
-                      <span style={{ fontSize: 11, color: "#667085" }}>Arrastrá el pin para reubicarlo.</span>
                       <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
                         <button className="ext-btn secondary" onClick={() => startEdit(p)}>
                           EDITAR
