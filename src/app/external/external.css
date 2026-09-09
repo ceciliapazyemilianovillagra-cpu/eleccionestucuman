@@ -118,6 +118,11 @@
 .ext-status-btn.active-votando { background: #e6f0fc; border-color: var(--blue); color: var(--blue); }
 .ext-status-btn.active-devuelta { background: #e3faf0; border-color: var(--green); color: #0f6b3a; }
 .ext-empty { text-align: center; color: var(--muted); padding: 26px 10px; font-size: 13px; }
+.ext-barcode-box { margin-top: 10px; padding: 12px; background: #f6faff; border: 1px solid #dbe8f1; border-radius: 12px; display: grid; gap: 8px; }
+.ext-barcode-box label { font-size: 11px; font-weight: 700; color: var(--muted); }
+.ext-barcode-box input { border: 1px solid #cfe0eb; border-radius: 10px; padding: 10px 12px; font-size: 14px; letter-spacing: .04em; }
+.ext-barcode-actions { display: flex; gap: 8px; }
+.ext-barcode-actions .ext-btn { flex: 1; }
 
 /* ---- Fiscales: mesa input, sections ---- */
 .ext-mesa-input { width: 100%; border: 1.5px solid #dbe8f1; border-radius: 12px; padding: 13px 14px; font: inherit; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: .04em; color: var(--navy); background: #fbfdff; }

@@ -51,9 +51,10 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
     const added = roles.filter((role) => !savedRoles.includes(role));
     const removed = savedRoles.filter((role) => !roles.includes(role));
+    const candidateId = await rpc(token, "my_candidate_id").catch(() => null);
     const requests = [
       fetch(`${SUPABASE_URL}/rest/v1/rpc/save_voter_profile`, { method: "POST", headers, body: JSON.stringify({ p_padron_id: voter.id, p_telefono: phone, p_estado: status, p_observaciones: notes }) }),
-      ...added.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles`, { method: "POST", headers, body: JSON.stringify({ padron_id: voter.id, role }) })),
+      ...added.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles`, { method: "POST", headers, body: JSON.stringify({ padron_id: voter.id, role, candidate_id: candidateId }) })),
       ...removed.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${voter.id}&role=eq.${role}`, { method: "DELETE", headers })),
     ];
     const results = await Promise.all(requests);
@@ -64,7 +65,7 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
           await fetch(`${SUPABASE_URL}/rest/v1/mobilizer_voter_links`, {
             method: "POST",
             headers: { ...headers, Prefer: "resolution=ignore-duplicates" },
-            body: JSON.stringify({ voter_id: voter.id, internal_user_id: uid }),
+            body: JSON.stringify({ voter_id: voter.id, internal_user_id: uid, candidate_id: candidateId }),
           });
         }
       }

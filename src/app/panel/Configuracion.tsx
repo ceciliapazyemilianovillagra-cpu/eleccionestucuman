@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Search, Check, Trash2, AlertTriangle, Database } from "lucide-react";
 import { rpc, formatDateTime, copyText, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { Users } from "./Users";
+import { Candidatos } from "./Candidatos";
 import { BulkRoles } from "./BulkRoles";
 import { BulkUbicaciones } from "./BulkUbicaciones";
 import { Apariencia } from "./Apariencia";
@@ -541,6 +542,7 @@ function SeguridadSection({ token }: { token: string }) {
 
 const TABS = [
   { key: "usuarios", label: "USUARIOS", superadminOnly: false },
+  { key: "candidatos", label: "CANDIDATOS", superadminOnly: true },
   { key: "roles", label: "ROLES", superadminOnly: false },
   { key: "ubicaciones", label: "UBICACIONES", superadminOnly: false },
   { key: "alertas", label: "ALERTAS", superadminOnly: false },
@@ -575,6 +577,7 @@ export function Configuracion({ token, close, initialTab, isSuperadmin }: { toke
           ))}
         </div>
         {tab === "usuarios" && <Users token={token} />}
+        {tab === "candidatos" && <Candidatos token={token} />}
         {tab === "roles" && <BulkRoles token={token} />}
         {tab === "ubicaciones" && <BulkUbicaciones token={token} />}
         {tab === "alertas" && <AlertsSection token={token} />}

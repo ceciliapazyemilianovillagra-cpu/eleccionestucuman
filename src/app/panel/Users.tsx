@@ -1,7 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, UploadCloud, Download } from "lucide-react";
-import { AppUser, ManagedUser, manageUsers, modules, moduleNames, roleNames } from "./shared";
+import { AppUser, Candidato, ManagedUser, listCandidatos, manageUsers, modules, moduleNames, roleNames } from "./shared";
 import { useRealtime } from "./realtime";
 
 const BULK_CHUNK_SIZE = 25;
@@ -15,6 +15,8 @@ export function Users({ token }: { token: string }) {
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState<AppUser["user_type"]>("operador");
   const [allowedModules, setAllowedModules] = useState<string[]>(["padron"]);
+  const [candidateId, setCandidateId] = useState<string>("");
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -49,6 +51,7 @@ export function Users({ token }: { token: string }) {
 
   useEffect(() => {
     loadUsers();
+    listCandidatos(token, true).then(setCandidatos);
   }, [token]);
 
   useRealtime(["app_user_roles"], token, loadUsers);
@@ -62,11 +65,12 @@ export function Users({ token }: { token: string }) {
     setSaving(true);
     setMessage("");
     try {
-      await manageUsers(token, { action: "create", email, password, user_type: userType, allowed_modules: allowedModules });
+      await manageUsers(token, { action: "create", email, password, user_type: userType, allowed_modules: allowedModules, candidate_id: candidateId || null });
       setEmail("");
       setPassword("");
       setUserType("operador");
       setAllowedModules(["padron"]);
+      setCandidateId("");
       setMessage("Usuario creado correctamente.");
       setShowCreate(false);
       setShowList(true);
@@ -226,6 +230,17 @@ export function Users({ token }: { token: string }) {
                 <option value="superadmin">Superadministrador</option>
               </select>
             </label>
+            {userType === "dirigente" && (
+              <label>
+                Candidato al que pertenece
+                <select required value={candidateId} onChange={(event) => setCandidateId(event.target.value)}>
+                  <option value="">Elegí un candidato…</option>
+                  {candidatos.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nombre} ({c.cargo === "legislador" ? "Legislador" : c.cargo === "concejal" ? "Concejal" : "Otro"})</option>
+                  ))}
+                </select>
+              </label>
+            )}
             {userType !== "superadmin" && userType !== "administrador" && (
               <fieldset>
                 <legend>Módulos habilitados</legend>
@@ -377,8 +392,14 @@ function EditUserSheet({ token, user, close, saved }: { token: string; user: Man
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState<AppUser["user_type"]>(user.user_type);
   const [allowedModules, setAllowedModules] = useState<string[]>(user.allowed_modules);
+  const [candidateId, setCandidateId] = useState<string>(user.candidate_id ? String(user.candidate_id) : "");
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    listCandidatos(token, true).then(setCandidatos);
+  }, [token]);
 
   function toggleModule(module: string) {
     setAllowedModules((current) => (current.includes(module) ? current.filter((item) => item !== module) : [...current, module]));
@@ -389,7 +410,7 @@ function EditUserSheet({ token, user, close, saved }: { token: string; user: Man
     setSaving(true);
     setMessage("");
     try {
-      await manageUsers(token, { action: "update", user_id: user.user_id, email, password, user_type: userType, allowed_modules: allowedModules });
+      await manageUsers(token, { action: "update", user_id: user.user_id, email, password, user_type: userType, allowed_modules: allowedModules, candidate_id: candidateId || null });
       await saved();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No se pudieron guardar los cambios.");
@@ -428,6 +449,17 @@ function EditUserSheet({ token, user, close, saved }: { token: string; user: Man
             <option value="superadmin">Superadministrador</option>
           </select>
         </label>
+        {userType === "dirigente" && (
+          <label>
+            Candidato al que pertenece
+            <select required value={candidateId} onChange={(event) => setCandidateId(event.target.value)}>
+              <option value="">Elegí un candidato…</option>
+              {candidatos.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre} ({c.cargo === "legislador" ? "Legislador" : c.cargo === "concejal" ? "Concejal" : "Otro"})</option>
+              ))}
+            </select>
+          </label>
+        )}
         {userType !== "superadmin" && userType !== "administrador" && (
           <fieldset>
             <legend>Módulos habilitados</legend>

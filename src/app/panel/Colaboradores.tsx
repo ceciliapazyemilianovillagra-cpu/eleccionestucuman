@@ -15,6 +15,7 @@ type Colaborador = {
   disputed: boolean;
   loaded_by_nombre: string | null;
   loaded_by_email: string | null;
+  candidate_nombre: string | null;
 };
 
 export function Colaboradores({ token, close }: { token: string; close: () => void }) {
@@ -52,6 +53,7 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
       Circuito: r.circuito_nombre ?? "",
       Estado: r.disputed ? "Reclamado" : "Único",
       "Cargado por": r.loaded_by_nombre ?? r.loaded_by_email ?? "",
+      Candidato: r.candidate_nombre ?? "",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -66,8 +68,8 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
     doc.text("Votantes", 14, 14);
     autoTable(doc, {
       startY: 20,
-      head: [["DNI", "Apellido y Nombre", "Mesa", "Circuito", "Estado", "Cargado por"]],
-      body: rows.map((r) => [r.dni, r.apellido_nombre, r.mesa ?? "", r.circuito_nombre ?? "", r.disputed ? "Reclamado" : "Único", r.loaded_by_nombre ?? r.loaded_by_email ?? ""]),
+      head: [["DNI", "Apellido y Nombre", "Mesa", "Circuito", "Estado", "Cargado por", "Candidato"]],
+      body: rows.map((r) => [r.dni, r.apellido_nombre, r.mesa ?? "", r.circuito_nombre ?? "", r.disputed ? "Reclamado" : "Único", r.loaded_by_nombre ?? r.loaded_by_email ?? "", r.candidate_nombre ?? ""]),
       styles: { fontSize: 8 },
     });
     doc.save("votantes.pdf");
@@ -153,7 +155,10 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
                 })
               }
             >
-              <b>{r.apellido_nombre}</b>
+              <div>
+                <b>{r.apellido_nombre}</b>
+                {r.candidate_nombre && <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--muted)" }}>{r.candidate_nombre}</p>}
+              </div>
               <span className={`badge sm ${r.disputed ? "danger" : "ok"}`}>{r.disputed ? "Reclamado" : "Único"}</span>
             </button>
           ))}

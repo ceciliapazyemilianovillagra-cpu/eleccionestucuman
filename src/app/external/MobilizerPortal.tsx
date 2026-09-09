@@ -47,6 +47,9 @@ export function MobilizerPortal({ fn, label }: { fn: "movilizadores" | "choferes
   const [listFilter, setListFilter] = useState("");
   const { getLocation, locating, geoError } = useGeolocation();
   const [markingId, setMarkingId] = useState<number | null>(null);
+  const [devolviendoId, setDevolviendoId] = useState<number | null>(null);
+  const [codigoBarra, setCodigoBarra] = useState("");
+  const [devolviendoError, setDevolviendoError] = useState("");
 
   useEffect(() => {
     const saved = loadToken(fn);
@@ -107,7 +110,7 @@ export function MobilizerPortal({ fn, label }: { fn: "movilizadores" | "choferes
     }
   }
 
-  async function markStatus(voterId: number, status: "buscado" | "votando" | "devuelta") {
+  async function markStatus(voterId: number, status: "buscado" | "votando" | "devuelta", barcode?: string) {
     setMarkingId(voterId);
     const point = await getLocation();
     const d = await callFn(fn, token, {
@@ -117,11 +120,35 @@ export function MobilizerPortal({ fn, label }: { fn: "movilizadores" | "choferes
       lat: point?.lat,
       lng: point?.lng,
       accuracy: point?.accuracy,
+      codigo_barra: barcode,
     });
     setMarkingId(null);
     if (d.success) {
       setMyVoters((prev) => prev.map((v) => (v.voter_id === voterId ? { ...v, last_status: status } : v)));
+      setDevolviendoId(null);
+      setCodigoBarra("");
+      setDevolviendoError("");
+    } else if (status === "devuelta") {
+      setDevolviendoError(d.error || "No se pudo registrar.");
     }
+  }
+
+  function handleStatusClick(voterId: number, status: "buscado" | "votando" | "devuelta") {
+    if (status === "devuelta") {
+      setDevolviendoId(voterId);
+      setCodigoBarra("");
+      setDevolviendoError("");
+      return;
+    }
+    markStatus(voterId, status);
+  }
+
+  function confirmDevuelta(voterId: number) {
+    if (!codigoBarra.trim()) {
+      setDevolviendoError("Ingresá los dígitos del código de barras de la boleta.");
+      return;
+    }
+    markStatus(voterId, "devuelta", codigoBarra.trim());
   }
 
   if (!token) {
@@ -219,12 +246,33 @@ export function MobilizerPortal({ fn, label }: { fn: "movilizadores" | "choferes
                     key={s}
                     className={`ext-status-btn ${v.last_status === s ? `active-${s}` : ""}`}
                     disabled={markingId === v.voter_id && locating}
-                    onClick={() => markStatus(v.voter_id, s)}
+                    onClick={() => handleStatusClick(v.voter_id, s)}
                   >
                     {markingId === v.voter_id && locating ? "..." : STATUS_LABEL[s]}
                   </button>
                 ))}
               </div>
+              {devolviendoId === v.voter_id && (
+                <div className="ext-barcode-box">
+                  <label>Código de barras de la boleta</label>
+                  <input
+                    inputMode="numeric"
+                    autoFocus
+                    placeholder="Dígitos del código de barras"
+                    value={codigoBarra}
+                    onChange={(e) => setCodigoBarra(e.target.value)}
+                  />
+                  {devolviendoError && <b className="ext-error">{devolviendoError}</b>}
+                  <div className="ext-barcode-actions">
+                    <button className="ext-btn secondary" type="button" onClick={() => setDevolviendoId(null)}>
+                      CANCELAR
+                    </button>
+                    <button className="ext-btn" type="button" disabled={locating} onClick={() => confirmDevuelta(v.voter_id)}>
+                      {locating ? "GUARDANDO…" : "CONFIRMAR DEVUELTA"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
