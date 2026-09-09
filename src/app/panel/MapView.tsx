@@ -314,11 +314,11 @@ export default function MapView({ token }: { token: string }) {
             .filter((p) => active.has(p.type as FilterKey) || (p.type === "otro" && true))
             .map((p) => (
               <Marker
-                key={`p-${p.id}`}
+                key={`p-${p.id}-${editingId === p.id ? "edit" : "view"}`}
                 position={[p.latitude, p.longitude]}
                 icon={ICONS[p.type]}
                 draggable={editingId === p.id}
-                eventHandlers={{ dragend: (e) => { const pos = e.target.getLatLng(); movePoint(p.id, pos.lat, pos.lng); } }}
+                eventHandlers={editingId === p.id ? { dragend: (e) => { const pos = e.target.getLatLng(); movePoint(p.id, pos.lat, pos.lng); } } : undefined}
               >
                 <Popup>
                   {editingId === p.id ? (
