@@ -30,28 +30,75 @@ const ICONS = {
   bunker: makeIcon("#17285f"),
   punto_caliente: makeIcon("#e04b3f"),
   otro: makeIcon("#f2a23a"),
+  escuela: makeIcon("#7a4fbf"),
 };
 
 const STATUS_LABEL: Record<string, string> = { buscado: "Buscado", votando: "Votando", devuelta: "Devuelta" };
 
+// Circuitos que son jurisdicción del candidato y su color asignado (fuente: planilla del equipo).
+// Cualquier circuito que NO esté en este mapa se oculta de la capa "Circuitos".
+const CIRCUITO_COLORS: Record<string, string> = {
+  "1": "#DBF9FC",
+  "1A": "#E7FCF9",
+  "2": "#F0FCEA",
+  "2A": "#D8FCE7",
+  "3": "#FCEDD8",
+  "4": "#FCE7FC",
+  "5": "#DBD8FC",
+  "6": "#DBEAFC",
+  "7": "#FCD8EA",
+  "7A": "#D8FCE1",
+  "8": "#FCFCDB",
+  "8A": "#F3FCD8",
+  "9": "#FCDBFC",
+  "9A": "#EDD8FC",
+  "10": "#D8F3FC",
+  "10A": "#FCDEF6",
+  "11": "#FCF9DE",
+  "11A": "#EAEAFC",
+  "12": "#DBEDFC",
+  "12A": "#E1F6FC",
+  "13": "#F3EAFC",
+  "13A": "#FCD8E4",
+  "14": "#E1FCF6",
+  "14A": "#DBE1FC",
+  "14B": "#FCE4DB",
+  "14C": "#FCF6EA",
+  "14D": "#DEFCF0",
+  "15": "#E4DBFC",
+  "15A": "#FCE1E4",
+  "15B": "#EAF0FC",
+  "16": "#FCD8DB",
+  "16A": "#FCE1ED",
+  "17": "#E1FCDB",
+  "17A": "#DBFCF9",
+  "18": "#EAE1FC",
+  "18A": "#FCFCEA",
+  "18B": "#FCEDEA",
+  "18C": "#F0FCE1",
+  "18D": "#FCF3DE",
+  "18E": "#E4EAFC",
+  "18F": "#FCDED8",
+  "18G": "#FCEDE1",
+  "19": "#EAF6FC",
+  "19A": "#FCEAF0",
+  "20": "#F6E1FC",
+  "21": "#E4FCE7",
+  "22": "#FCEAF9",
+  "23": "#EAFCF0",
+};
+
 type FiscalLoc = { mesa: string; fiscal_nombre: string; latitude: number; longitude: number; marked_at: string };
 type TransportLoc = { voter_id: number; voter_nombre: string; mobilizer_nombre: string | null; status: string; latitude: number; longitude: number; marked_at: string };
-type MapPoint = { id: number; type: "bunker" | "punto_caliente" | "otro"; label: string; description: string | null; latitude: number; longitude: number };
+type MapPoint = { id: number; type: "bunker" | "punto_caliente" | "otro" | "escuela"; label: string; description: string | null; latitude: number; longitude: number };
 type Cobertura = { circuito: string; circuito_nombre: string | null; total_padron: number; movilizadores: number; fiscales: number; colaboradores: number; cobertura_pct: number | null };
-
-function coberturaColor(pct: number | null) {
-  if (pct == null) return "#9aa5b8";
-  if (pct < 2) return "#a3231e";
-  if (pct < 5) return "#e0873f";
-  if (pct < 10) return "#a9822c";
-  return "#147a4c";
-}
 
 const FILTERS = [
   { key: "fiscal", label: "Fiscales", color: "#1478b8" },
   { key: "movilizador", label: "Movilizadores", color: "#28b88a" },
   { key: "bunker", label: "Bunkers", color: "#17285f" },
   { key: "punto_caliente", label: "Puntos calientes", color: "#e04b3f" },
+  { key: "escuela", label: "Escuelas", color: "#7a4fbf" },
 ] as const;
 type FilterKey = (typeof FILTERS)[number]["key"];
 
@@ -71,7 +118,7 @@ export default function MapView({ token }: { token: string }) {
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editLabel, setEditLabel] = useState("");
-  const [editType, setEditType] = useState<"bunker" | "punto_caliente" | "otro">("otro");
+  const [editType, setEditType] = useState<"bunker" | "punto_caliente" | "otro" | "escuela">("otro");
   const [circuitosGeo, setCircuitosGeo] = useState<GeoJSON.FeatureCollection | null>(null);
   const [cobertura, setCobertura] = useState<Record<string, Cobertura>>({});
   const [showCircuitos, setShowCircuitos] = useState(false);
@@ -195,7 +242,7 @@ export default function MapView({ token }: { token: string }) {
       </div>
       {showCircuitos && (
         <p className="ext-note" style={{ marginTop: -4 }}>
-          Límites de circuitos electorales (fuente pública, simplificados). Color = % de cobertura territorial (movilizadores/fiscales/votantes en rol sobre el padrón de ese circuito).
+          Circuitos que son jurisdicción del candidato, con el color asignado por el equipo. Los demás circuitos de Tucumán no se muestran.
         </p>
       )}
       <div className="map-add-row">
@@ -220,17 +267,20 @@ export default function MapView({ token }: { token: string }) {
             <GeoJSON
               key="circuitos"
               data={circuitosGeo}
+              filter={(feature?: Feature) => {
+                const code = String(feature?.properties?.circuito ?? "").replace(/^0+/, "");
+                return code in CIRCUITO_COLORS;
+              }}
               style={(feature?: Feature): PathOptions => {
                 const code = String(feature?.properties?.circuito ?? "").replace(/^0+/, "");
-                const c = cobertura[code];
-                return { color: "#17285f", weight: 1, fillColor: coberturaColor(c?.cobertura_pct ?? null), fillOpacity: 0.35 };
+                return { color: "#17285f", weight: 1.5, fillColor: CIRCUITO_COLORS[code] ?? "#cccccc", fillOpacity: 0.55 };
               }}
               onEachFeature={(feature: Feature, layer: Layer) => {
                 const code = String(feature.properties?.circuito ?? "").replace(/^0+/, "");
                 const c = cobertura[code];
-                const pctTxt = c?.cobertura_pct != null ? `${c.cobertura_pct}%` : "sin datos";
+                const pctTxt = c?.cobertura_pct != null ? `${c.cobertura_pct}% cobertura` : "sin datos de cobertura";
                 const nombre = c?.circuito_nombre ? ` · ${c.circuito_nombre}` : "";
-                layer.bindTooltip(`Circuito ${code}${nombre}<br>Cobertura: ${pctTxt}`, { sticky: true });
+                layer.bindTooltip(`Circuito ${code}${nombre}<br>${pctTxt}`, { sticky: true });
               }}
             />
           )}
@@ -274,10 +324,11 @@ export default function MapView({ token }: { token: string }) {
                   {editingId === p.id ? (
                     <div style={{ display: "grid", gap: 6, minWidth: 160 }}>
                       <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} autoFocus />
-                      <select value={editType} onChange={(e) => setEditType(e.target.value as "bunker" | "punto_caliente" | "otro")}>
+                      <select value={editType} onChange={(e) => setEditType(e.target.value as "bunker" | "punto_caliente" | "otro" | "escuela")}>
                         <option value="bunker">Bunker</option>
                         <option value="punto_caliente">Punto caliente</option>
                         <option value="otro">Otro</option>
+                        <option value="escuela">Escuela</option>
                       </select>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button className="ext-btn" onClick={() => saveEdit(p.id)}>GUARDAR</button>
@@ -288,7 +339,13 @@ export default function MapView({ token }: { token: string }) {
                     <>
                       <b>{p.label}</b>
                       <br />
-                      {p.type === "bunker" ? "Bunker" : p.type === "punto_caliente" ? "Punto caliente" : "Otro"}
+                      {p.type === "bunker" ? "Bunker" : p.type === "punto_caliente" ? "Punto caliente" : p.type === "escuela" ? "Escuela" : "Otro"}
+                      {p.description && (
+                        <>
+                          <br />
+                          <span style={{ fontSize: 11, color: "#667085" }}>{p.description}</span>
+                        </>
+                      )}
                       <br />
                       <span style={{ fontSize: 11, color: "#667085" }}>Arrastrá el pin para reubicarlo.</span>
                       <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
