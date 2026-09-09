@@ -195,7 +195,7 @@ export default function MapView({ token }: { token: string }) {
       </div>
       {showCircuitos && (
         <p className="ext-note" style={{ marginTop: -4 }}>
-          Límites de circuitos electorales (fuente pública, simplificados). Color = % de cobertura territorial (movilizadores/fiscales/colaboradores sobre el padrón de ese circuito).
+          Límites de circuitos electorales (fuente pública, simplificados). Color = % de cobertura territorial (movilizadores/fiscales/votantes en rol sobre el padrón de ese circuito).
         </p>
       )}
       <div className="map-add-row">

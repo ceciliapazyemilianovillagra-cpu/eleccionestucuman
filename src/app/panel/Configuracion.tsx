@@ -468,7 +468,7 @@ function SeguridadSection({ token }: { token: string }) {
           Borrar datos de prueba
         </b>
         <p className="ext-note" style={{ margin: "0 0 12px" }}>
-          Borra todo lo cargado durante pruebas o entrenamientos de comicios: roles asignados (movilizador/chofer/fiscal/colaborador), códigos y sesiones externas, reclamos, perfiles de votantes, asistencia/reportes/cierres de fiscales, traslados y el historial de acciones.
+          Borra todo lo cargado durante pruebas o entrenamientos de comicios: roles asignados (movilizador/chofer/fiscal/votante), códigos y sesiones externas, reclamos, perfiles de votantes, asistencia/reportes/cierres de fiscales, traslados y el historial de acciones.
           <br />
           <b>No se toca</b>: el padrón, la agenda y los usuarios internos.
         </p>

@@ -55,22 +55,22 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Colaboradores");
-    XLSX.writeFile(wb, "colaboradores.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Votantes");
+    XLSX.writeFile(wb, "votantes.xlsx");
   }
 
   async function exportPdf() {
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
     const doc = new jsPDF();
-    doc.text("Colaboradores", 14, 14);
+    doc.text("Votantes", 14, 14);
     autoTable(doc, {
       startY: 20,
       head: [["DNI", "Apellido y Nombre", "Mesa", "Circuito", "Estado", "Cargado por"]],
       body: rows.map((r) => [r.dni, r.apellido_nombre, r.mesa ?? "", r.circuito_nombre ?? "", r.disputed ? "Reclamado" : "Único", r.loaded_by_nombre ?? r.loaded_by_email ?? ""]),
       styles: { fontSize: 8 },
     });
-    doc.save("colaboradores.pdf");
+    doc.save("votantes.pdf");
   }
 
   return (
@@ -79,7 +79,7 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
         <button onClick={close}>←</button>
         <div>
           <small>MÓDULO</small>
-          <h1>COLABORADORES</h1>
+          <h1>VOTANTES</h1>
         </div>
         <img src="/icon.svg" alt="Logo" />
       </header>
@@ -115,7 +115,7 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
           }}
         >
           <label>
-            Buscar colaborador
+            Buscar votante
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="DNI o nombre" autoComplete="off" />
           </label>
           <button disabled={loading}>{loading ? "BUSCANDO…" : "BUSCAR"}</button>
@@ -132,7 +132,7 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
             EXPORTAR PDF
           </button>
         </div>
-        {!loading && !rows.length && <p className="empty">No hay colaboradores cargados.</p>}
+        {!loading && !rows.length && <p className="empty">No hay votantes cargados.</p>}
         <div className="results">
           {rows.map((r) => (
             <button

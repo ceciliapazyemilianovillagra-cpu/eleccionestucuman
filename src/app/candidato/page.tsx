@@ -97,7 +97,7 @@ export default function Candidato() {
           <div className="stats-grid">
             <div className="stat-card">
               <b>{data.kpis.colaboradores.toLocaleString("es-AR")}</b>
-              <p>Colaboradores cargados</p>
+              <p>Votantes cargados</p>
             </div>
             <div className="stat-card">
               <b>{data.kpis.movilizadores_activos}</b>
@@ -122,9 +122,9 @@ export default function Candidato() {
           </div>
 
           <section className="ext-card">
-            <h2>Colaboradores por movilizador</h2>
+            <h2>Votantes por movilizador</h2>
             <p className="ext-hint">Top movilizadores por cantidad cargada.</p>
-            {!data.top_movilizadores.length && <p className="empty">Todavía no hay colaboradores cargados.</p>}
+            {!data.top_movilizadores.length && <p className="empty">Todavía no hay votantes cargados.</p>}
             <div className="results" style={{ gap: 8 }}>
               {data.top_movilizadores.map((m) => (
                 <div key={m.movilizador_nombre} style={{ display: "grid", gridTemplateColumns: "140px 1fr 34px", alignItems: "center", gap: 10 }}>
@@ -159,7 +159,7 @@ export default function Candidato() {
 
           <section className="ext-card">
             <h2>Relación movilizador → traslado</h2>
-            <p className="ext-hint">Sobre {data.funnel.cargados} colaboradores cargados.</p>
+            <p className="ext-hint">Sobre {data.funnel.cargados} votantes cargados.</p>
             <div className="results" style={{ gap: 8 }}>
               {[
                 { label: "Cargados", value: data.funnel.cargados, color: "var(--blue)" },
@@ -180,7 +180,7 @@ export default function Candidato() {
 
           <section className="ext-card">
             <h2>Alertas</h2>
-            <p className="ext-hint">Reclamos de colaboradores sin resolver.</p>
+            <p className="ext-hint">Reclamos de votantes sin resolver.</p>
             {!data.alertas.length && <p className="empty">Sin reclamos pendientes.</p>}
             <div className="log-list">
               {data.alertas.map((a, i) => (

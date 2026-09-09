@@ -11,13 +11,13 @@ type Stats = { total_votantes: number; total_mesas: number; total_circuitos: num
 const ROLE_LABELS: Record<string, string> = {
   dirigente: "Dirigentes", chofer: "Choferes", movilizador: "Movilizadores", coordinador_circuito: "Coord. circuito",
   fiscal_general: "Fiscales generales", fiscal_mesa: "Fiscales de mesa", fiscal_suplente: "Fiscales suplentes",
-  colaborador: "Colaboradores", coordinador_general: "Coord. general",
+  colaborador: "Votantes", colaborador_comicio: "Colaboradores de comicio", coordinador_general: "Coord. general",
 };
 
 const ROLE_ICONS: Record<string, typeof Users> = {
   dirigente: Landmark, chofer: Car, movilizador: UserCheck, coordinador_circuito: Landmark,
   fiscal_general: ShieldCheck, fiscal_mesa: ShieldCheck, fiscal_suplente: ShieldCheck,
-  colaborador: Handshake, coordinador_general: Landmark,
+  colaborador: Handshake, colaborador_comicio: Handshake, coordinador_general: Landmark,
 };
 
 export function Padron({ token, close }: { token: string; close: () => void }) {

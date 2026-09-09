@@ -148,7 +148,7 @@ export default function Home() {
 
   const MODULES: { key: ModuleKey; visible: boolean; icon: typeof Search; color: string; wide?: boolean; label: string; desc: string }[] = [
     { key: "padron", visible: canUsePadron, icon: Search, color: "blue", label: "PADRÓN", desc: "Buscar, consultar y editar votantes" },
-    { key: "colaboradores", visible: canUsePadron, icon: Handshake, color: "bluelight", label: "COLABORADORES", desc: "Carga interna y export" },
+    { key: "colaboradores", visible: canUsePadron, icon: Handshake, color: "bluelight", label: "VOTANTES", desc: "Carga interna y export" },
     { key: "agenda", visible: true, icon: CalendarDays, color: "yellow", label: "AGENDA", desc: "Reuniones y capacitaciones" },
     { key: "comicios", visible: canUsePadron, icon: Landmark, color: "steel", label: "COMICIOS", desc: "Fiscales, mapa y traslados" },
     { key: "config", visible: isAdmin, icon: Settings, color: "navy", wide: true, label: "CONFIGURACIÓN", desc: "Usuarios, alertas, enlaces y logs" },

@@ -195,7 +195,7 @@ export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: str
           <div style={{ marginBottom: 16 }}>
             <p className="bell-popover-title" style={{ margin: "0 0 8px 2px" }}>Territorio: circuitos con menor cobertura</p>
             <p className="ext-note" style={{ marginTop: 0, marginBottom: 8 }}>
-              % de votantes del padrón con algún rol asignado (movilizador, fiscal o colaborador), por circuito.
+              % de votantes del padrón con algún rol asignado (movilizador, fiscal o votante en rol), por circuito.
             </p>
             <div className="log-list">
               {cobertura.slice(0, 8).map((c) => (
