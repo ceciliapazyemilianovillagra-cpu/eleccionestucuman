@@ -64,6 +64,7 @@ export function DirigenteSection({ token }: { token: string }) {
         <input required placeholder="DNI o nombre" value={query} onChange={(e) => setQuery(e.target.value)} />
         <button disabled={searching}>{searching ? "BUSCANDO..." : "BUSCAR"}</button>
       </form>
+      {searching && <p className="ext-note">Buscando…</p>}
       {msg && <p className="ext-error">{msg}</p>}
 
       {!selected && people.length > 0 && (

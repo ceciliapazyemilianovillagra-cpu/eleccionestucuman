@@ -134,6 +134,7 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
             EXPORTAR PDF
           </button>
         </div>
+        {loading && <p className="empty">Buscando…</p>}
         {!loading && !rows.length && <p className="empty">No hay votantes cargados.</p>}
         <div className="results">
           {rows.map((r) => (

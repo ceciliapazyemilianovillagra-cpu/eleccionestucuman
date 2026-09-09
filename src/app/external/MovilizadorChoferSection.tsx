@@ -151,6 +151,7 @@ export function MovilizadorChoferSection({ token, isMovilizador, isChofer }: { t
             <input required inputMode="numeric" placeholder="Ingresá DNI" value={query} onChange={(e) => setQuery(e.target.value)} />
             <button disabled={searching}>{searching ? "BUSCANDO..." : "BUSCAR"}</button>
           </form>
+          {searching && <p className="ext-note">Buscando…</p>}
           {voter && (
             <div className="ext-voter">
               <span className="dni">DNI {voter.dni}</span>

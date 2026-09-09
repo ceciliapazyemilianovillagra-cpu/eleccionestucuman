@@ -22,6 +22,7 @@ export function RoleRoster({ token, role, label }: { token: string; role: "movil
 
   const [addQuery, setAddQuery] = useState("");
   const [addResults, setAddResults] = useState<Voter[]>([]);
+  const [addSearching, setAddSearching] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<Voter | null>(null);
 
@@ -43,12 +44,17 @@ export function RoleRoster({ token, role, label }: { token: string; role: "movil
   async function searchToAdd(e: FormEvent) {
     e.preventDefault();
     if (addQuery.trim().length < 2) return;
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/search_padron`, {
-      method: "POST",
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ p_query: addQuery, p_limit: 20 }),
-    });
-    setAddResults(await response.json());
+    setAddSearching(true);
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/search_padron`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_query: addQuery, p_limit: 20 }),
+      });
+      setAddResults(await response.json());
+    } finally {
+      setAddSearching(false);
+    }
   }
 
   function openExisting(row: RolePerson) {
@@ -109,8 +115,9 @@ export function RoleRoster({ token, role, label }: { token: string; role: "movil
         <div className="search-card" style={{ marginBottom: 16 }}>
           <form onSubmit={searchToAdd} className="ext-field-row">
             <input placeholder="Buscar por DNI o nombre en el padrón" value={addQuery} onChange={(e) => setAddQuery(e.target.value)} />
-            <button className="ext-btn">BUSCAR</button>
+            <button className="ext-btn" disabled={addSearching}>{addSearching ? "BUSCANDO…" : "BUSCAR"}</button>
           </form>
+          {addSearching && <p className="empty">Buscando…</p>}
           <div className="results" style={{ marginTop: 10 }}>
             {addResults.map((v) => (
               <button

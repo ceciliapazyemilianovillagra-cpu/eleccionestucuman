@@ -51,7 +51,7 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
     }
 
     setLoading(true);
-    setMessage("");
+    setMessage("Buscando…");
 
     try {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/search_padron`, {
