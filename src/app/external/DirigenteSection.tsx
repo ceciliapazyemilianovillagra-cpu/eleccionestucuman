@@ -206,28 +206,28 @@ export function DirigenteSection({ token }: { token: string }) {
           {filteredAssigned.map((p) => {
             const needsCode = p.roles.some((r) => NEEDS_CODE_ROLES.includes(r));
             return (
-              <div className="ext-voter-row" key={p.padron_id}>
-                <b style={{ display: "block" }}>{p.apellido_nombre}</b>
-                <span className="dni-small">
-                  DNI {p.dni} · {p.roles.map((r) => ROLE_LABEL[r] ?? r).join(", ")}
-                </span>
-                {(p.disputed !== null || needsCode) && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-                    {p.disputed !== null && <span className={`badge ${p.disputed ? "danger" : "ok"}`}>{p.disputed ? "Reclamado" : "Único"}</span>}
-                    {needsCode && <span className={`badge ${p.has_code ? "ok" : "danger"}`}>{p.has_code ? "Código listo" : "Sin código"}</span>}
-                  </div>
-                )}
-                {needsCode && (
-                  <button
-                    type="button"
-                    className="ext-btn secondary full"
-                    style={{ marginTop: 8 }}
-                    disabled={resettingId === p.padron_id}
-                    onClick={() => resetCredential(p.padron_id)}
-                  >
-                    {resettingId === p.padron_id ? "…" : p.has_code ? "BLANQUEAR CÓDIGO" : "GENERAR CÓDIGO"}
-                  </button>
-                )}
+              <div className="ext-voter-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }} key={p.padron_id}>
+                <div style={{ minWidth: 0 }}>
+                  <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.apellido_nombre}</b>
+                  <span className="dni-small">
+                    DNI {p.dni} - {p.roles.map((r) => ROLE_LABEL[r] ?? r).join(", ")}
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flex: "none" }}>
+                  {p.disputed !== null && <span className={`badge sm ${p.disputed ? "danger" : "ok"}`}>{p.disputed ? "Reclamado" : "Único"}</span>}
+                  {needsCode && <span className={`badge sm ${p.has_code ? "ok" : "danger"}`}>{p.has_code ? "Código listo" : "Sin código"}</span>}
+                  {needsCode && (
+                    <button
+                      type="button"
+                      className="ext-btn secondary"
+                      style={{ padding: "6px 10px", fontSize: 11 }}
+                      disabled={resettingId === p.padron_id}
+                      onClick={() => resetCredential(p.padron_id)}
+                    >
+                      {resettingId === p.padron_id ? "…" : p.has_code ? "BLANQUEAR" : "GENERAR"}
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
