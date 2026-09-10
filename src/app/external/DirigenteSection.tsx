@@ -206,21 +206,21 @@ export function DirigenteSection({ token }: { token: string }) {
           {filteredAssigned.map((p) => {
             const needsCode = p.roles.some((r) => NEEDS_CODE_ROLES.includes(r));
             return (
-              <div className="ext-voter-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }} key={p.padron_id}>
-                <div style={{ minWidth: 0 }}>
-                  <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.apellido_nombre}</b>
-                  <span className="dni-small">
+              <div className="ext-voter-row" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", overflowX: "auto" }} key={p.padron_id}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, minWidth: 0, flex: "1 1 auto" }}>
+                  <b style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.apellido_nombre}</b>
+                  <span className="dni-small" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     DNI {p.dni} - {p.roles.map((r) => ROLE_LABEL[r] ?? r).join(", ")}
                   </span>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flex: "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, flex: "none" }}>
                   {p.disputed !== null && <span className={`badge sm ${p.disputed ? "danger" : "ok"}`}>{p.disputed ? "Reclamado" : "Único"}</span>}
                   {needsCode && <span className={`badge sm ${p.has_code ? "ok" : "danger"}`}>{p.has_code ? "Código listo" : "Sin código"}</span>}
                   {needsCode && (
                     <button
                       type="button"
                       className="ext-btn secondary"
-                      style={{ padding: "6px 10px", fontSize: 11 }}
+                      style={{ padding: "6px 10px", fontSize: 11, whiteSpace: "nowrap" }}
                       disabled={resettingId === p.padron_id}
                       onClick={() => resetCredential(p.padron_id)}
                     >
