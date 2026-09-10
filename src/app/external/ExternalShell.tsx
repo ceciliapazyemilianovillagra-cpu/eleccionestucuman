@@ -30,13 +30,15 @@ export function ExternalShell({
             <h1>{title}</h1>
           </div>
         </div>
-        {onLogout && (
-          <button type="button" className="ext-logout" onClick={onLogout}>
-            Cerrar sesión
-          </button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {person && <span className="ext-person-pill">{person}</span>}
+          {onLogout && (
+            <button type="button" className="ext-logout" onClick={onLogout}>
+              Cerrar sesión
+            </button>
+          )}
+        </div>
       </div>
-      {person && <p className="ext-person">Hola, {person}</p>}
       <div className="ext-body">{children}</div>
     </main>
   );

@@ -29,7 +29,10 @@ export default function Comicios() {
     if (saved) {
       setToken(saved);
       callFn(FN, saved, { action: "me" }).then((d) => {
-        if (Array.isArray(d.roles)) setRoles(d.roles);
+        if (Array.isArray(d.roles)) {
+          setRoles(d.roles);
+          setPerson(d.person?.nombre ?? "");
+        }
         else {
           clearToken(FN);
           setToken("");

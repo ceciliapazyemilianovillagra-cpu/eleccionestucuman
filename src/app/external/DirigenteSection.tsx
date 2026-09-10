@@ -1,9 +1,10 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
+import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { callFn } from "./api";
 
 type Person = { id: number; dni: string; apellido_nombre: string; mesa: string | null; circuito_nombre: string | null; current_roles: string[] };
-type Assigned = { padron_id: number; role: string; dni: string; apellido_nombre: string };
+type Assigned = { padron_id: number; role: string; dni: string; apellido_nombre: string; has_code: boolean };
 type RoleResult = { role: string; status: string; message?: string };
 type Credential = { status: "created" | "existing" | "none"; code: string | null };
 
@@ -35,6 +36,17 @@ export function DirigenteSection({ token }: { token: string }) {
   const [listLoading, setListLoading] = useState(true);
   const [resettingId, setResettingId] = useState<number | null>(null);
   const [resetCode, setResetCode] = useState<{ padron_id: number; code: string } | null>(null);
+  const [listFilter, setListFilter] = useState("");
+  const [openRoles, setOpenRoles] = useState<Set<string>>(new Set());
+
+  function toggleGroup(key: string) {
+    setOpenRoles((cur) => {
+      const next = new Set(cur);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   async function loadAssigned() {
     setListLoading(true);
@@ -89,9 +101,14 @@ export function DirigenteSection({ token }: { token: string }) {
     if (d.code) setResetCode({ padron_id: padronId, code: d.code });
   }
 
+  const filteredAssigned = assignedList.filter((a) => {
+    if (!listFilter.trim()) return true;
+    const q = listFilter.toLowerCase();
+    return a.dni.includes(q) || a.apellido_nombre.toLowerCase().includes(q);
+  });
   const grouped = ROLE_OPTIONS.map((opt) => ({
     ...opt,
-    people: assignedList.filter((a) => a.role === opt.key),
+    people: filteredAssigned.filter((a) => a.role === opt.key),
   })).filter((g) => g.people.length > 0);
 
   return (
@@ -155,7 +172,7 @@ export function DirigenteSection({ token }: { token: string }) {
                   </div>
                 ))}
                 {credential?.status === "created" && (
-                  <div className="log-row" style={{ cursor: "default", background: "#eaf7ff" }}>
+                  <div className="log-row" style={{ cursor: "default", background: "#fff8e1" }}>
                     <span className="badge ok">Código único</span>
                     <div>
                       <b>{credential.code}</b>
@@ -179,14 +196,18 @@ export function DirigenteSection({ token }: { token: string }) {
 
       <section className="ext-card">
         <h2>Gente que fuiste cargando</h2>
-        <p className="ext-hint">Agrupado por rol asignado.</p>
+        <p className="ext-hint">Comprimido por rol. Tocá un rol para desplegarlo. Los códigos no se pueden volver a mostrar (quedan guardados de forma segura) — si alguien lo perdió, blanqueáselo y le das el nuevo.</p>
         <button className="ext-btn secondary" style={{ marginBottom: 10 }} onClick={loadAssigned}>
           ACTUALIZAR
         </button>
+        <div className="ext-list-search">
+          <Search size={16} strokeWidth={2} />
+          <input placeholder="Buscar por nombre o DNI en esta lista" value={listFilter} onChange={(e) => setListFilter(e.target.value)} />
+        </div>
         {listLoading && <p className="ext-note">Buscando…</p>}
-        {!listLoading && !grouped.length && <p className="ext-empty">Todavía no cargaste a nadie.</p>}
+        {!listLoading && !grouped.length && <p className="ext-empty">{listFilter ? "Nadie coincide con esa búsqueda." : "Todavía no cargaste a nadie."}</p>}
         {resetCode && (
-          <div className="log-row" style={{ cursor: "default", background: "#eaf7ff", marginBottom: 10 }}>
+          <div className="log-row" style={{ cursor: "default", background: "#fff8e1", marginBottom: 10 }}>
             <span className="badge ok">Código nuevo</span>
             <div>
               <b>{resetCode.code}</b>
@@ -194,31 +215,41 @@ export function DirigenteSection({ token }: { token: string }) {
             </div>
           </div>
         )}
-        {grouped.map((g) => (
-          <div key={g.key} style={{ marginBottom: 14 }}>
-            <p className="bell-popover-title" style={{ margin: "0 0 6px 2px" }}>{g.label.toUpperCase()} ({g.people.length})</p>
-            <div className="ext-voters-list">
-              {g.people.map((p) => (
-                <div className="ext-voter-row" key={`${p.padron_id}-${g.key}`}>
-                  <div className="ext-voter-row-top">
-                    <div>
-                      <b>{p.apellido_nombre}</b>
-                      <span className="dni-small">DNI {p.dni}</span>
+        {grouped.map((g) => {
+          const isOpen = openRoles.has(g.key);
+          return (
+            <div key={g.key} style={{ marginBottom: 8 }}>
+              <button type="button" className="collapse-toggle" onClick={() => toggleGroup(g.key)}>
+                <span>{g.label.toUpperCase()} ({g.people.length})</span>
+                {isOpen ? <ChevronUp size={18} strokeWidth={2.5} /> : <ChevronDown size={18} strokeWidth={2.5} />}
+              </button>
+              {isOpen && (
+                <div className="ext-voters-list" style={{ marginTop: 8 }}>
+                  {g.people.map((p) => (
+                    <div className="ext-voter-row" key={`${p.padron_id}-${g.key}`}>
+                      <div className="ext-voter-row-top">
+                        <div>
+                          <b>{p.apellido_nombre}</b>
+                          <span className="dni-small">DNI {p.dni}</span>
+                        </div>
+                        <span className={`badge ${p.has_code ? "ok" : "danger"}`}>{p.has_code ? "Código listo" : "Sin código"}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="ext-btn secondary full"
+                        style={{ marginTop: 8 }}
+                        disabled={resettingId === p.padron_id}
+                        onClick={() => resetCredential(p.padron_id)}
+                      >
+                        {resettingId === p.padron_id ? "…" : p.has_code ? "BLANQUEAR CÓDIGO" : "GENERAR CÓDIGO"}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className="ext-btn secondary"
-                      disabled={resettingId === p.padron_id}
-                      onClick={() => resetCredential(p.padron_id)}
-                    >
-                      {resettingId === p.padron_id ? "…" : "BLANQUEAR CÓDIGO"}
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </section>
     </>
   );

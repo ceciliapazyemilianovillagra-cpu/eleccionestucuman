@@ -3,6 +3,7 @@
   background: linear-gradient(180deg, #f4faff 0%, #eaf3fb 100%);
   padding-bottom: calc(40px + env(safe-area-inset-bottom));
 }
+.ext .config-tabs button.active { background: var(--yellow, #f2c94c); color: #241d03; }
 
 /* ---- Login ---- */
 .ext-login {
@@ -55,7 +56,11 @@
   border: 1px solid #ffffff33; background: #ffffff14; color: #fff; border-radius: 11px;
   padding: 9px 14px; font-size: 12px; font-weight: 700; flex: none; cursor: pointer;
 }
-.ext-person { max-width: min(100%, 760px); margin: 14px auto 0; padding: 0 20px; color: var(--muted); font-size: 13px; }
+.ext-person-pill {
+  background: var(--yellow, #f2c94c); color: #241d03; font-weight: 800; font-size: 12px;
+  padding: 7px 12px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw;
+  font-family: var(--font-display); letter-spacing: .01em;
+}
 
 .ext-body { width: min(100%, 760px); margin: 0 auto; padding: 18px 20px 10px; display: grid; gap: 18px; }
 
