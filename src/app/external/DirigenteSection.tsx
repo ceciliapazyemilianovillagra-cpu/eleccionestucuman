@@ -98,6 +98,11 @@ export function DirigenteSection({ token }: { token: string }) {
     return a.dni.includes(q) || a.apellido_nombre.toLowerCase().includes(q);
   });
 
+  const roleCounts = ROLE_OPTIONS.map((opt) => ({
+    ...opt,
+    count: assignedList.filter((a) => a.roles.includes(opt.key)).length,
+  })).filter((r) => r.count > 0);
+
   return (
     <>
       <section className="ext-card">
@@ -184,6 +189,15 @@ export function DirigenteSection({ token }: { token: string }) {
       <section className="ext-card">
         <h2>Gente que fuiste cargando</h2>
         <p className="ext-hint">Un código sirve para todos los roles de la persona. Los códigos no se pueden volver a mostrar (quedan guardados de forma segura) — si alguien lo perdió, blanqueáselo y le das el nuevo.</p>
+        {roleCounts.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+            {roleCounts.map((r) => (
+              <span key={r.key} className="badge sm neutral" style={{ background: "#fff8e1", color: "#7a5e00" }}>
+                {r.label}: {r.count}
+              </span>
+            ))}
+          </div>
+        )}
         <button className="ext-btn secondary" style={{ marginBottom: 10 }} onClick={loadAssigned}>
           ACTUALIZAR
         </button>
