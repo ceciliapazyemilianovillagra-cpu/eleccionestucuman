@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { callFn } from "./api";
 
 type Person = { id: number; dni: string; apellido_nombre: string; mesa: string | null; circuito_nombre: string | null; current_roles: string[] };
-type Assigned = { padron_id: number; role: string; dni: string; apellido_nombre: string; has_code: boolean };
+type Assigned = { padron_id: number; role: string; dni: string; apellido_nombre: string; has_code: boolean; disputed: boolean | null };
 type RoleResult = { role: string; status: string; message?: string };
 type Credential = { status: "created" | "existing" | "none"; code: string | null };
 
@@ -232,17 +232,23 @@ export function DirigenteSection({ token }: { token: string }) {
                           <b>{p.apellido_nombre}</b>
                           <span className="dni-small">DNI {p.dni}</span>
                         </div>
-                        <span className={`badge ${p.has_code ? "ok" : "danger"}`}>{p.has_code ? "Código listo" : "Sin código"}</span>
+                        {p.disputed !== null ? (
+                          <span className={`badge ${p.disputed ? "danger" : "ok"}`}>{p.disputed ? "Reclamado" : "Único"}</span>
+                        ) : (
+                          <span className={`badge ${p.has_code ? "ok" : "danger"}`}>{p.has_code ? "Código listo" : "Sin código"}</span>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        className="ext-btn secondary full"
-                        style={{ marginTop: 8 }}
-                        disabled={resettingId === p.padron_id}
-                        onClick={() => resetCredential(p.padron_id)}
-                      >
-                        {resettingId === p.padron_id ? "…" : p.has_code ? "BLANQUEAR CÓDIGO" : "GENERAR CÓDIGO"}
-                      </button>
+                      {p.disputed === null && (
+                        <button
+                          type="button"
+                          className="ext-btn secondary full"
+                          style={{ marginTop: 8 }}
+                          disabled={resettingId === p.padron_id}
+                          onClick={() => resetCredential(p.padron_id)}
+                        >
+                          {resettingId === p.padron_id ? "…" : p.has_code ? "BLANQUEAR CÓDIGO" : "GENERAR CÓDIGO"}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
