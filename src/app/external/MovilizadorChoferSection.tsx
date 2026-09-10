@@ -141,6 +141,14 @@ export function MovilizadorChoferSection({ token, isMovilizador, isChofer }: { t
     return v.dni.includes(q) || v.apellido_nombre.toLowerCase().includes(q);
   });
 
+  const counts = {
+    total: myVoters.length,
+    buscado: myVoters.filter((v) => v.last_status === "buscado").length,
+    votando: myVoters.filter((v) => v.last_status === "votando").length,
+    devuelta: myVoters.filter((v) => v.last_status === "devuelta").length,
+    reclamado: myVoters.filter((v) => v.disputed).length,
+  };
+
   return (
     <>
       {isMovilizador && (
@@ -179,6 +187,15 @@ export function MovilizadorChoferSection({ token, isMovilizador, isChofer }: { t
             ? "Marcá el traslado de cada persona que te asignaron para llevar."
             : "Marcá el traslado de cada persona el día de la elección."}
         </p>
+        {counts.total > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+            <span className="badge sm neutral" style={{ background: "#fff8e1", color: "#7a5e00" }}>Total: {counts.total}</span>
+            <span className="badge sm neutral" style={{ background: "#fff8e1", color: "#7a5e00" }}>Buscado: {counts.buscado}</span>
+            <span className="badge sm neutral" style={{ background: "#fff8e1", color: "#7a5e00" }}>Votando: {counts.votando}</span>
+            <span className="badge sm neutral" style={{ background: "#fff8e1", color: "#7a5e00" }}>Devuelta: {counts.devuelta}</span>
+            {counts.reclamado > 0 && <span className="badge sm danger">Reclamado: {counts.reclamado}</span>}
+          </div>
+        )}
         <button className="ext-btn secondary" style={{ marginBottom: 10 }} onClick={refreshList}>
           ACTUALIZAR
         </button>
