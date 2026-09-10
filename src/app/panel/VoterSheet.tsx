@@ -13,6 +13,8 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
   const [saved, setSaved] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [copied, setCopied] = useState(false);
+  const [alreadyHasCode, setAlreadyHasCode] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
@@ -42,7 +44,22 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
       body: JSON.stringify({ action: "provision", padron_id: voter.id }),
     });
     const data = await response.json();
+    setAlreadyHasCode(Boolean(data.error && !data.code));
     setAccessCode(data.code || data.error || "No se pudo generar el código.");
+    setCopied(false);
+  }
+
+  async function resetAccess() {
+    setResetting(true);
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/comicios`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reset_code", padron_id: voter.id }),
+    });
+    const data = await response.json();
+    setResetting(false);
+    setAlreadyHasCode(false);
+    setAccessCode(data.code || data.error || "No se pudo blanquear el código.");
     setCopied(false);
   }
 
@@ -146,20 +163,27 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
               {accessCode && (
                 <div className="access-code">
                   <code>{accessCode}</code>
-                  <button
-                    type="button"
-                    aria-label="Copiar código"
-                    onClick={async () => {
-                      const ok = await copyText(accessCode);
-                      if (ok) setCopied(true);
-                      else window.prompt("Copiá el código manualmente:", accessCode);
-                    }}
-                  >
-                    ⧉
-                  </button>
+                  {!alreadyHasCode && (
+                    <button
+                      type="button"
+                      aria-label="Copiar código"
+                      onClick={async () => {
+                        const ok = await copyText(accessCode);
+                        if (ok) setCopied(true);
+                        else window.prompt("Copiá el código manualmente:", accessCode);
+                      }}
+                    >
+                      ⧉
+                    </button>
+                  )}
                 </div>
               )}
               {copied && <p>Código copiado.</p>}
+              {alreadyHasCode && (
+                <button type="button" onClick={resetAccess} disabled={resetting} style={{ marginTop: 8 }}>
+                  {resetting ? "BLANQUEANDO…" : "BLANQUEAR CÓDIGO"}
+                </button>
+              )}
             </section>
           )}
           <label>
