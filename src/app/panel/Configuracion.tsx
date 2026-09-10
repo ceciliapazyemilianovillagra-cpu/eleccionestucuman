@@ -1,6 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
-import { Search, Check, Trash2, AlertTriangle, Database } from "lucide-react";
+import { Search, Check, Trash2, AlertTriangle, Database, ArrowRight } from "lucide-react";
 import { rpc, formatDateTime, copyText, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { Users } from "./Users";
 import { Candidatos } from "./Candidatos";
@@ -84,6 +84,7 @@ function AlertsSection({ token }: { token: string }) {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
   const [showResolved, setShowResolved] = useState(false);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   async function load(includeResolved: boolean) {
     setLoading(true);
@@ -100,8 +101,10 @@ function AlertsSection({ token }: { token: string }) {
 
   useRealtime(["internal_notifications"], token, () => load(showResolved));
 
-  async function resolve(id: string) {
-    await rpc(token, "resolve_voter_claim", { p_id: id }).catch(() => {});
+  async function resolveAssign(id: string, assignTo: "owner" | "actor") {
+    setResolvingId(id);
+    await rpc(token, "resolve_voter_claim_assign", { p_id: id, p_assign_to: assignTo }).catch(() => {});
+    setResolvingId(null);
     load(showResolved);
   }
 
@@ -128,9 +131,26 @@ function AlertsSection({ token }: { token: string }) {
               </b>
               <p>Cargado por {c.owner_nombre || c.owner_internal_email || "un interno"}</p>
               {c.status === "unread" && (
-                <button className="ext-btn secondary" style={{ marginTop: 8 }} onClick={() => resolve(c.id)}>
-                  MARCAR RESUELTO
-                </button>
+                <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                  <button
+                    className="ext-btn secondary"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                    disabled={resolvingId === c.id}
+                    onClick={() => resolveAssign(c.id, "owner")}
+                  >
+                    <ArrowRight size={13} strokeWidth={2.5} />
+                    QUEDA PARA {c.owner_nombre || c.owner_internal_email || "QUIEN LO CARGÓ"}
+                  </button>
+                  <button
+                    className="ext-btn secondary"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                    disabled={resolvingId === c.id}
+                    onClick={() => resolveAssign(c.id, "actor")}
+                  >
+                    <ArrowRight size={13} strokeWidth={2.5} />
+                    QUEDA PARA {c.actor_nombre}
+                  </button>
+                </div>
               )}
             </div>
           </div>
