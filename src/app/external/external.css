@@ -1,6 +1,6 @@
 .ext {
   min-height: 100dvh;
-  background: linear-gradient(180deg, #f4faff 0%, #eaf3fb 100%);
+  background: #fff;
   padding-bottom: calc(40px + env(safe-area-inset-bottom));
 }
 .ext .config-tabs button.active { background: var(--yellow, #f2c94c); color: #241d03; }
