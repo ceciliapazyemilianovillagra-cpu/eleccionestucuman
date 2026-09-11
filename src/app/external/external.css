@@ -44,7 +44,7 @@
   color: #fff;
   padding: calc(20px + env(safe-area-inset-top)) 20px 20px;
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
-  border-bottom: 3px solid var(--yellow, #f2c94c);
+  border-bottom: 5px solid var(--yellow, #f2c94c);
 }
 .ext-topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .ext-topbar small { color: #9fd4f5; font-size: 10px; font-weight: 700; letter-spacing: .16em; font-family: var(--font-display); text-transform: uppercase; }
