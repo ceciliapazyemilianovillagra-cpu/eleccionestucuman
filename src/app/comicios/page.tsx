@@ -47,11 +47,11 @@ export default function Comicios() {
   const isChofer = roles.includes("chofer");
   const isFiscal = roles.some((r) => FISCAL_ROLES.includes(r));
 
-  const availableTabs: { key: TabKey; label: string }[] = [
-    ...(isCandidato ? [{ key: "candidato" as const, label: "Sala de situación" }] : []),
-    ...(isDirigente ? [{ key: "dirigente" as const, label: "Asignar roles" }] : []),
-    ...(isMovilizador || isChofer ? [{ key: "movilizador" as const, label: "Traslados" }] : []),
-    ...(isFiscal ? [{ key: "fiscal" as const, label: "Jornada electoral" }] : []),
+  const availableTabs: { key: TabKey; label: string; sub: string }[] = [
+    ...(isCandidato ? [{ key: "candidato" as const, label: "Sala de situación", sub: "Candidato" }] : []),
+    ...(isDirigente ? [{ key: "dirigente" as const, label: "Asignar roles", sub: "Dirigente" }] : []),
+    ...(isMovilizador || isChofer ? [{ key: "movilizador" as const, label: "Traslados", sub: "Movilizadores" }] : []),
+    ...(isFiscal ? [{ key: "fiscal" as const, label: "Jornada electoral", sub: "Fiscales" }] : []),
   ];
 
   useEffect(() => {
@@ -117,7 +117,7 @@ export default function Comicios() {
         <div className="config-tabs" style={{ marginBottom: 14 }}>
           {availableTabs.map((t) => (
             <button key={t.key} className={tab === t.key ? "active" : ""} onClick={() => setTab(t.key)}>
-              {t.label.toUpperCase()}
+              {t.label.toUpperCase()} <span className="config-tab-sub">{t.sub.toUpperCase()}</span>
             </button>
           ))}
         </div>
