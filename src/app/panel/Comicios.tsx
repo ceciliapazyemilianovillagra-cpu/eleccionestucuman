@@ -1,7 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { UserCheck, Vote, CheckSquare, FileCheck } from "lucide-react";
 import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY, Voter } from "./shared";
 import { RoleRoster } from "./RoleRoster";
 import { VoterSheet } from "./VoterSheet";
@@ -101,23 +100,19 @@ function FiscalesTab({ token }: { token: string }) {
       {stats && (
         <div className="stats-grid">
           <div className="stat-card">
-            <span className="stat-icon sky"><UserCheck size={18} strokeWidth={2} /></span>
-            <b>{stats.fiscales_presentes}</b>
+            <span className="stat-seal"><b>{stats.fiscales_presentes}</b></span>
             <p>Fiscales presentes</p>
           </div>
           <div className="stat-card">
-            <span className="stat-icon green"><Vote size={18} strokeWidth={2} /></span>
-            <b>{stats.votantes_reportados.toLocaleString("es-AR")}</b>
+            <span className="stat-seal"><b>{stats.votantes_reportados.toLocaleString("es-AR")}</b></span>
             <p>Votantes reportados</p>
           </div>
           <div className="stat-card">
-            <span className="stat-icon orange"><CheckSquare size={18} strokeWidth={2} /></span>
-            <b>{stats.mesas_cerradas}</b>
+            <span className="stat-seal"><b>{stats.mesas_cerradas}</b></span>
             <p>Mesas cerradas</p>
           </div>
           <div className="stat-card">
-            <span className="stat-icon sky"><FileCheck size={18} strokeWidth={2} /></span>
-            <b>{stats.votos_nagle.toLocaleString("es-AR")}</b>
+            <span className="stat-seal"><b>{stats.votos_nagle.toLocaleString("es-AR")}</b></span>
             <p>Votos Nagle</p>
           </div>
         </div>

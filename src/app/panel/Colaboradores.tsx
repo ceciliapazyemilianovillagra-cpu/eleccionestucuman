@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Users, CheckCircle2, TriangleAlert } from "lucide-react";
 import { rpc, Voter } from "./shared";
 import { ScrollTopButton } from "./ScrollTopButton";
 import { useRealtime } from "./realtime";
@@ -88,24 +87,15 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
       <section className="padron-content">
         <div className="stats-grid">
           <div className="stat-card">
-            <span className="stat-icon sky">
-              <Users size={18} strokeWidth={2} />
-            </span>
-            <b>{total}</b>
+            <span className="stat-seal"><b>{total}</b></span>
             <p>Cargados</p>
           </div>
           <div className="stat-card">
-            <span className="stat-icon green">
-              <CheckCircle2 size={18} strokeWidth={2} />
-            </span>
-            <b>{unicos}</b>
+            <span className="stat-seal"><b>{unicos}</b></span>
             <p>Únicos</p>
           </div>
           <div className="stat-card">
-            <span className="stat-icon orange">
-              <TriangleAlert size={18} strokeWidth={2} />
-            </span>
-            <b>{disputed}</b>
+            <span className="stat-seal"><b>{disputed}</b></span>
             <p>Reclamados</p>
           </div>
         </div>

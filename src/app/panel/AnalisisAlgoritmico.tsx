@@ -130,10 +130,10 @@ export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: str
 
         {stats && (
           <div className="stats-grid">
-            <div className="stat-card"><b>{stats.menciona_nagle_7d}</b><p>Nagle · 7 días</p></div>
-            <div className="stat-card"><b>{stats.menciona_smt_7d}</b><p>San Miguel · 7 días</p></div>
-            <div className="stat-card"><b>{stats.menciona_tucuman_7d}</b><p>Tucumán · 7 días</p></div>
-            <div className="stat-card"><b>{stats.total}</b><p>Notas rastreadas</p></div>
+            <div className="stat-card"><span className="stat-seal"><b>{stats.menciona_nagle_7d}</b></span><p>Nagle · 7 días</p></div>
+            <div className="stat-card"><span className="stat-seal"><b>{stats.menciona_smt_7d}</b></span><p>San Miguel · 7 días</p></div>
+            <div className="stat-card"><span className="stat-seal"><b>{stats.menciona_tucuman_7d}</b></span><p>Tucumán · 7 días</p></div>
+            <div className="stat-card"><span className="stat-seal"><b>{stats.total}</b></span><p>Notas rastreadas</p></div>
           </div>
         )}
 

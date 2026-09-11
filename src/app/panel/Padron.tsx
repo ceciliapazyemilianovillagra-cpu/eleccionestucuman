@@ -1,6 +1,5 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
-import { Users, Vote, Car, ShieldCheck, Landmark, Handshake, UserCheck } from "lucide-react";
 import { SUPABASE_URL, SUPABASE_KEY, Voter, rpc } from "./shared";
 import { VoterSheet } from "./VoterSheet";
 import { ScrollTopButton } from "./ScrollTopButton";
@@ -12,12 +11,6 @@ const ROLE_LABELS: Record<string, string> = {
   dirigente: "Dirigentes", chofer: "Choferes", movilizador: "Movilizadores", coordinador_circuito: "Coord. circuito",
   fiscal_general: "Fiscales generales", fiscal_mesa: "Fiscales de mesa", fiscal_suplente: "Fiscales suplentes",
   colaborador: "Votantes", colaborador_comicio: "Colaboradores de comicio", coordinador_general: "Coord. general",
-};
-
-const ROLE_ICONS: Record<string, typeof Users> = {
-  dirigente: Landmark, chofer: Car, movilizador: UserCheck, coordinador_circuito: Landmark,
-  fiscal_general: ShieldCheck, fiscal_mesa: ShieldCheck, fiscal_suplente: ShieldCheck,
-  colaborador: Handshake, colaborador_comicio: Handshake, coordinador_general: Landmark,
 };
 
 export function Padron({ token, close }: { token: string; close: () => void }) {
@@ -94,31 +87,19 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
         {stats && (
           <div className="stats-grid">
             <div className="stat-card">
-              <span className="stat-icon sky">
-                <Users size={18} strokeWidth={2} />
-              </span>
-              <b>{stats.total_votantes.toLocaleString("es-AR")}</b>
+              <span className="stat-seal"><b>{stats.total_votantes.toLocaleString("es-AR")}</b></span>
               <p>Votantes</p>
             </div>
             <div className="stat-card">
-              <span className="stat-icon green">
-                <Vote size={18} strokeWidth={2} />
-              </span>
-              <b>{stats.total_mesas.toLocaleString("es-AR")}</b>
+              <span className="stat-seal"><b>{stats.total_mesas.toLocaleString("es-AR")}</b></span>
               <p>Mesas</p>
             </div>
-            {stats.por_rol.map((r) => {
-              const RoleIcon = ROLE_ICONS[r.role] ?? UserCheck;
-              return (
-                <div className="stat-card" key={r.role}>
-                  <span className="stat-icon sky">
-                    <RoleIcon size={18} strokeWidth={2} />
-                  </span>
-                  <b>{r.count.toLocaleString("es-AR")}</b>
-                  <p>{ROLE_LABELS[r.role] ?? r.role}</p>
-                </div>
-              );
-            })}
+            {stats.por_rol.map((r) => (
+              <div className="stat-card" key={r.role}>
+                <span className="stat-seal"><b>{r.count.toLocaleString("es-AR")}</b></span>
+                <p>{ROLE_LABELS[r.role] ?? r.role}</p>
+              </div>
+            ))}
           </div>
         )}
         <form className="search-card" onSubmit={search}>

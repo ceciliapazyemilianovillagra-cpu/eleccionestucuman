@@ -314,15 +314,15 @@ function RemindersSection({ token }: { token: string }) {
       {stats && (
         <div className="stats-grid" style={{ marginBottom: 14 }}>
           <div className="stat-card">
-            <b>{stats.today}</b>
+            <span className="stat-seal"><b>{stats.today}</b></span>
             <p>ENVIADOS HOY</p>
           </div>
           <div className="stat-card">
-            <b>{stats.this_month}</b>
+            <span className="stat-seal"><b>{stats.this_month}</b></span>
             <p>ESTE MES</p>
           </div>
           <div className="stat-card">
-            <b>{stats.total}</b>
+            <span className="stat-seal"><b>{stats.total}</b></span>
             <p>TOTAL HISTÓRICO</p>
           </div>
         </div>
@@ -509,23 +509,19 @@ function SeguridadSection({ token }: { token: string }) {
           <>
             <div className="stats-grid">
               <div className="stat-card">
-                <span className="stat-icon sky">◧</span>
-                <b>{humanBytes(stats.db_size_bytes)}</b>
+                <span className="stat-seal"><b>{humanBytes(stats.db_size_bytes)}</b></span>
                 <p>TAMAÑO DE LA BASE</p>
               </div>
               <div className="stat-card">
-                <span className="stat-icon green">◧</span>
-                <b>{stats.padron_rows.toLocaleString("es-AR")}</b>
+                <span className="stat-seal"><b>{stats.padron_rows.toLocaleString("es-AR")}</b></span>
                 <p>FILAS EN PADRÓN</p>
               </div>
               <div className="stat-card">
-                <span className="stat-icon orange">◧</span>
-                <b>{stats.external_sessions_active.toLocaleString("es-AR")}</b>
+                <span className="stat-seal"><b>{stats.external_sessions_active.toLocaleString("es-AR")}</b></span>
                 <p>SESIONES EXTERNAS ACTIVAS</p>
               </div>
               <div className="stat-card">
-                <span className="stat-icon sky">◧</span>
-                <b>{stats.activity_last_24h.toLocaleString("es-AR")}</b>
+                <span className="stat-seal"><b>{stats.activity_last_24h.toLocaleString("es-AR")}</b></span>
                 <p>ACCIONES ÚLTIMAS 24HS</p>
               </div>
             </div>
