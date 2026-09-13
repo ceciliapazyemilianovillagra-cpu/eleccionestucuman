@@ -1,6 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, UserCheck, Car, ShieldCheck, Users, Flag, Check } from "lucide-react";
 import { callFn } from "./api";
 
 type Person = { id: number; dni: string; apellido_nombre: string; mesa: string | null; circuito_nombre: string | null; current_roles: string[] };
@@ -9,13 +9,13 @@ type RoleResult = { role: string; status: string; message?: string };
 type Credential = { status: "created" | "existing" | "none"; code: string | null };
 
 const ROLE_OPTIONS = [
-  { key: "movilizador", label: "Movilizador" },
-  { key: "chofer", label: "Chofer" },
-  { key: "fiscal_general", label: "Fiscal general" },
-  { key: "fiscal_mesa", label: "Fiscal de mesa" },
-  { key: "fiscal_suplente", label: "Fiscal suplente" },
-  { key: "colaborador", label: "Votante" },
-  { key: "colaborador_comicio", label: "Colaborador de comicio" },
+  { key: "movilizador", label: "Movilizador", icon: UserCheck, color: "blue" },
+  { key: "chofer", label: "Chofer", icon: Car, color: "navy" },
+  { key: "fiscal_general", label: "Fiscal general", icon: ShieldCheck, color: "blue" },
+  { key: "fiscal_mesa", label: "Fiscal de mesa", icon: ShieldCheck, color: "green" },
+  { key: "fiscal_suplente", label: "Fiscal suplente", icon: ShieldCheck, color: "navy" },
+  { key: "colaborador", label: "Votante", icon: Users, color: "navy" },
+  { key: "colaborador_comicio", label: "Colaborador de comicio", icon: Flag, color: "green" },
 ] as const;
 
 const NEEDS_CODE_ROLES = ["movilizador", "chofer", "fiscal_general", "fiscal_mesa", "fiscal_suplente"];
@@ -137,13 +137,29 @@ export function DirigenteSection({ token }: { token: string }) {
             <h3>{selected.apellido_nombre}</h3>
             <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", margin: "10px 0 6px" }}>CELULAR</label>
             <input inputMode="tel" placeholder="381 000 0000" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
-            <div className="role-checks" style={{ marginTop: 14 }}>
-              {ROLE_OPTIONS.map((r) => (
-                <label key={r.key}>
-                  <input type="checkbox" checked={roles.includes(r.key)} onChange={() => toggleRole(r.key)} />
-                  <span>{r.label}</span>
-                </label>
-              ))}
+            <div className="role-cards" style={{ marginTop: 14 }}>
+              {ROLE_OPTIONS.map((r) => {
+                const Icon = r.icon;
+                const active = roles.includes(r.key);
+                return (
+                  <button
+                    type="button"
+                    key={r.key}
+                    className={`role-card ${active ? "selected" : ""}`}
+                    onClick={() => toggleRole(r.key)}
+                  >
+                    {active && (
+                      <span className="role-card-check">
+                        <Check size={10} strokeWidth={3} />
+                      </span>
+                    )}
+                    <span className={`role-card-ico ${r.color}`}>
+                      <Icon size={17} strokeWidth={2} />
+                    </span>
+                    <b>{r.label}</b>
+                  </button>
+                );
+              })}
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <button type="button" className="ext-btn secondary" onClick={() => setSelected(null)}>

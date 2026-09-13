@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { ShieldCheck, Vote } from "lucide-react";
 import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY, Voter } from "./shared";
 import { RoleRoster } from "./RoleRoster";
 import { VoterSheet } from "./VoterSheet";
@@ -9,7 +10,19 @@ import { useRealtime } from "./realtime";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <p className="empty">Cargando mapa…</p> });
 
-type Stats = { fiscales_presentes: number; mesas_cerradas: number; votos_nagle: number; votantes_reportados: number };
+function pct(value: number, total: number) {
+  if (!total) return 0;
+  return Math.round((value / total) * 100);
+}
+
+type Stats = {
+  fiscales_presentes: number;
+  total_fiscales: number;
+  mesas_cerradas: number;
+  total_mesas: number;
+  votos_nagle: number;
+  votantes_reportados: number;
+};
 type Mesa = {
   mesa: string;
   fiscal_nombre: string | null;
@@ -98,18 +111,32 @@ function FiscalesTab({ token }: { token: string }) {
   return (
     <div>
       {stats && (
-        <div className="stats-grid">
-          <div className="stat-card">
-            <span className="stat-seal"><b>{stats.fiscales_presentes}</b></span>
-            <p>Fiscales presentes</p>
+        <div className="progress-stats">
+          <div className="progress-card blue">
+            <div className="progress-card-top">
+              <span className="progress-chip"><ShieldCheck size={17} strokeWidth={2} /></span>
+              <div>
+                <b>Fiscales presentes</b>
+                <small>de {stats.total_fiscales} fiscales asignados</small>
+              </div>
+            </div>
+            <div className="progress-bar"><i style={{ width: `${pct(stats.fiscales_presentes, stats.total_fiscales)}%` }} /></div>
+            <div className="progress-pct"><span>{stats.fiscales_presentes} presentes</span><span>{pct(stats.fiscales_presentes, stats.total_fiscales)}%</span></div>
+          </div>
+          <div className="progress-card navy">
+            <div className="progress-card-top">
+              <span className="progress-chip"><Vote size={17} strokeWidth={2} /></span>
+              <div>
+                <b>Mesas cerradas</b>
+                <small>de {stats.total_mesas} mesas totales</small>
+              </div>
+            </div>
+            <div className="progress-bar"><i style={{ width: `${pct(stats.mesas_cerradas, stats.total_mesas)}%` }} /></div>
+            <div className="progress-pct"><span>{stats.mesas_cerradas} mesas</span><span>{pct(stats.mesas_cerradas, stats.total_mesas)}%</span></div>
           </div>
           <div className="stat-card">
             <span className="stat-seal"><b>{stats.votantes_reportados.toLocaleString("es-AR")}</b></span>
             <p>Votantes reportados</p>
-          </div>
-          <div className="stat-card">
-            <span className="stat-seal"><b>{stats.mesas_cerradas}</b></span>
-            <p>Mesas cerradas</p>
           </div>
           <div className="stat-card">
             <span className="stat-seal"><b>{stats.votos_nagle.toLocaleString("es-AR")}</b></span>
