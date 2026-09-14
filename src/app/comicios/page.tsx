@@ -88,9 +88,9 @@ export default function Comicios() {
     return (
       <ExternalLoginCard>
         <form onSubmit={login}>
-          <img src="/icon.svg" alt="Elecciones Tucumán" />
-          <small>ACCESO EXTERNO</small>
-          <h1>Comicios</h1>
+          <img src="/icon.svg" alt="Pulso Electoral" />
+          <small>GESTIÓN Y LOGÍSTICA TERRITORIAL</small>
+          <h1>Pulso Electoral</h1>
           <p>Ingresá con tu DNI y el código único que te entregaron.</p>
           <label>DNI</label>
           <input required inputMode="numeric" placeholder="Tu DNI" value={dni} onChange={(e) => setDni(e.target.value)} />
@@ -105,14 +105,14 @@ export default function Comicios() {
 
   if (!availableTabs.length) {
     return (
-      <ExternalShell eyebrow="COMICIOS" title="Sin rol asignado" person={person} onLogout={logout}>
+      <ExternalShell eyebrow="PULSO ELECTORAL" title="Sin rol asignado" person={person} onLogout={logout}>
         <p className="empty">Todavía no tenés ningún rol asignado en el equipo. Consultá a tu dirigente.</p>
       </ExternalShell>
     );
   }
 
   return (
-    <ExternalShell eyebrow="COMICIOS" title={availableTabs.find((t) => t.key === tab)?.label ?? ""} person={person} onLogout={logout}>
+    <ExternalShell eyebrow="PULSO ELECTORAL" title={availableTabs.find((t) => t.key === tab)?.label ?? ""} person={person} onLogout={logout}>
       {availableTabs.length > 1 && (
         <div className="config-tabs" style={{ marginBottom: 14 }}>
           {availableTabs.map((t) => (
