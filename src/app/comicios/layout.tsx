@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   applicationName: "Pulso Electoral",
   appleWebApp: { capable: true, title: "Pulso Electoral", statusBarStyle: "black-translucent" },
   icons: { icon: "/comicios/icon.png", apple: "/comicios/apple-icon.png" },
+  manifest: "/comicios/site.webmanifest",
 };
 
 export default function ComiciosLayout({ children }: { children: React.ReactNode }) {
