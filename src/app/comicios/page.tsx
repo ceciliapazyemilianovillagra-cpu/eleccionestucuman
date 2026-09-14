@@ -50,7 +50,9 @@ export default function Comicios() {
   const availableTabs: { key: TabKey; label: string; sub: string }[] = [
     ...(isCandidato ? [{ key: "candidato" as const, label: "Sala de situación", sub: "Candidato" }] : []),
     ...(isDirigente ? [{ key: "dirigente" as const, label: "Asignar roles", sub: "Dirigente" }] : []),
-    ...(isMovilizador || isChofer ? [{ key: "movilizador" as const, label: "Traslados", sub: "Movilizadores" }] : []),
+    ...(isMovilizador || isChofer
+      ? [{ key: "movilizador" as const, label: "Traslados", sub: isMovilizador && isChofer ? "Movilizadores y choferes" : isChofer ? "Choferes" : "Movilizadores" }]
+      : []),
     ...(isFiscal ? [{ key: "fiscal" as const, label: "Jornada electoral", sub: "Fiscales" }] : []),
   ];
 
