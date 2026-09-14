@@ -17,15 +17,18 @@ export async function callFn(fn: "movilizadores" | "choferes" | "fiscales" | "ca
 
 const SESSION_KEY_PREFIX = "et_ext_token_";
 
+// localStorage (no sessionStorage): las sesiones externas se generan para no vencer
+// nunca (100 años), asi que la persistencia tiene que sobrevivir a cerrar la pestana
+// o relanzar la app desde el icono del celular, no solo mientras dura la pestana.
 export function saveToken(fn: string, token: string) {
   try {
-    sessionStorage.setItem(SESSION_KEY_PREFIX + fn, token);
+    localStorage.setItem(SESSION_KEY_PREFIX + fn, token);
   } catch {}
 }
 
 export function loadToken(fn: string): string {
   try {
-    return sessionStorage.getItem(SESSION_KEY_PREFIX + fn) ?? "";
+    return localStorage.getItem(SESSION_KEY_PREFIX + fn) ?? "";
   } catch {
     return "";
   }
@@ -33,6 +36,6 @@ export function loadToken(fn: string): string {
 
 export function clearToken(fn: string) {
   try {
-    sessionStorage.removeItem(SESSION_KEY_PREFIX + fn);
+    localStorage.removeItem(SESSION_KEY_PREFIX + fn);
   } catch {}
 }
