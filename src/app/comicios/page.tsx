@@ -88,7 +88,7 @@ export default function Comicios() {
     return (
       <ExternalLoginCard>
         <form onSubmit={login}>
-          <img src="/icon.svg" alt="Pulso Electoral" />
+          <img src="/pulso-electoral-logo.png" alt="Pulso Electoral" />
           <small>GESTIÓN Y LOGÍSTICA TERRITORIAL</small>
           <h1>Pulso Electoral</h1>
           <p>Ingresá con tu DNI y el código único que te entregaron.</p>

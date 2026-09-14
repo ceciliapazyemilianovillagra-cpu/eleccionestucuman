@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   description: "Gestión y Logística Territorial",
   applicationName: "Pulso Electoral",
   appleWebApp: { capable: true, title: "Pulso Electoral", statusBarStyle: "black-translucent" },
+  icons: { icon: "/comicios/icon.png", apple: "/comicios/apple-icon.png" },
 };
 
 export default function ComiciosLayout({ children }: { children: React.ReactNode }) {
