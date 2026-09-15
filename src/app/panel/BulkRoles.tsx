@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UploadCloud, Download } from "lucide-react";
-import { SUPABASE_URL, SUPABASE_KEY, electoralRoles, rpc } from "./shared";
+import { SUPABASE_URL, SUPABASE_KEY, Candidato, electoralRoles, listCandidatos, rpc } from "./shared";
 
 const ROLE_LABELS = Object.fromEntries(electoralRoles) as Record<string, string>;
 const VALID_ROLES: string[] = electoralRoles.map(([key]) => key);
@@ -28,6 +28,12 @@ export function BulkRoles({ token }: { token: string }) {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [candidateId, setCandidateId] = useState("");
+
+  useEffect(() => {
+    listCandidatos(token, true).then(setCandidatos);
+  }, [token]);
 
   async function downloadTemplate() {
     const XLSX = await import("xlsx");
@@ -95,6 +101,10 @@ export function BulkRoles({ token }: { token: string }) {
   async function runUpload() {
     const valid = rows.filter((r) => !r.error);
     if (!valid.length) return;
+    if (!candidateId) {
+      setMessage("Elegí a qué candidato pertenece esta carga.");
+      return;
+    }
     setProcessing(true);
     setProgress(0);
     setResults([]);
@@ -103,7 +113,7 @@ export function BulkRoles({ token }: { token: string }) {
     try {
       for (let i = 0; i < valid.length; i += CHUNK_SIZE) {
         const chunk = valid.slice(i, i + CHUNK_SIZE);
-        const data = await rpc(token, "bulk_assign_roles", { p_rows: chunk.map((r) => ({ dni: r.dni, role: r.role })) });
+        const data = await rpc(token, "bulk_assign_roles", { p_rows: chunk.map((r) => ({ dni: r.dni, role: r.role })), p_candidate_id: Number(candidateId) });
         for (let j = 0; j < data.length; j++) {
           const r = data[j];
           const original = chunk[j];
@@ -170,6 +180,17 @@ export function BulkRoles({ token }: { token: string }) {
           <p className="ext-note" style={{ marginTop: 0 }}>
             {rows.filter((r) => !r.error).length} de {rows.length} filas listas para asignar.
           </p>
+          <label style={{ display: "block", marginBottom: 14 }}>
+            <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6 }}>
+              CANDIDATO AL QUE PERTENECE ESTA CARGA
+            </span>
+            <select required value={candidateId} onChange={(e) => setCandidateId(e.target.value)}>
+              <option value="">Elegí un candidato…</option>
+              {candidatos.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          </label>
           <div className="results" style={{ maxHeight: 240, overflow: "auto", marginBottom: 14 }}>
             {rows.map((r, i) => (
               <div key={i} className="voter-row compact-row" style={{ cursor: "default" }}>
