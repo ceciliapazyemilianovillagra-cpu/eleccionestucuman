@@ -3,7 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { SUPABASE_URL, SUPABASE_KEY, Candidato, Bloque, listBloques } from "./shared";
 import { useRealtime } from "./realtime";
 
-const CARGO_LABEL: Record<string, string> = { legislador: "Legislador", concejal: "Concejal", otro: "Otro" };
+const CARGO_LABEL: Record<string, string> = { legislador: "Legislador", concejal: "Concejal", delegado_comunal: "Delegado comunal", otro: "Otro" };
 
 export function Candidatos({ token }: { token: string }) {
   const [rows, setRows] = useState<Candidato[]>([]);
@@ -77,6 +77,7 @@ export function Candidatos({ token }: { token: string }) {
         <select value={cargo} onChange={(e) => setCargo(e.target.value as Candidato["cargo"])}>
           <option value="legislador">Legislador</option>
           <option value="concejal">Concejal</option>
+          <option value="delegado_comunal">Delegado comunal</option>
           <option value="otro">Otro</option>
         </select>
         <select required value={bloqueId} onChange={(e) => setBloqueId(e.target.value)}>

@@ -6,6 +6,8 @@ import { AppUser, Bloque, Candidato, ManagedUser, listBloques, listCandidatos, m
 const BLOQUE_REQUIRED_TYPES: AppUser["user_type"][] = ["dirigente", "administrador"];
 import { useRealtime } from "./realtime";
 
+const CARGO_LABEL: Record<string, string> = { legislador: "Legislador", concejal: "Concejal", delegado_comunal: "Delegado comunal", otro: "Otro" };
+
 const BULK_CHUNK_SIZE = 25;
 
 type BulkRow = { email: string; user_type: "operador" | "dirigente"; allowed_modules: string[]; password?: string; error?: string };
@@ -254,7 +256,7 @@ export function Users({ token }: { token: string }) {
                 <select required value={candidateId} onChange={(event) => setCandidateId(event.target.value)} disabled={!bloqueId}>
                   <option value="">{bloqueId ? "Elegí un candidato…" : "Elegí primero un bloque"}</option>
                   {candidatosDelBloque.map((c) => (
-                    <option key={c.id} value={c.id}>{c.nombre} ({c.cargo === "legislador" ? "Legislador" : c.cargo === "concejal" ? "Concejal" : "Otro"})</option>
+                    <option key={c.id} value={c.id}>{c.nombre} ({CARGO_LABEL[c.cargo] ?? "Otro"})</option>
                   ))}
                 </select>
               </label>
@@ -489,7 +491,7 @@ function EditUserSheet({ token, user, close, saved }: { token: string; user: Man
             <select required value={candidateId} onChange={(event) => setCandidateId(event.target.value)} disabled={!bloqueId}>
               <option value="">{bloqueId ? "Elegí un candidato…" : "Elegí primero un bloque"}</option>
               {candidatosDelBloque.map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre} ({c.cargo === "legislador" ? "Legislador" : c.cargo === "concejal" ? "Concejal" : "Otro"})</option>
+                <option key={c.id} value={c.id}>{c.nombre} ({CARGO_LABEL[c.cargo] ?? "Otro"})</option>
               ))}
             </select>
           </label>

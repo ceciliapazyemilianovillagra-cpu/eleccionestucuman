@@ -6,7 +6,7 @@ export const SUPABASE_KEY =
 export type Voter = { id: number; dni: string; apellido_nombre: string; domicilio: string | null; circuito: string; circuito_nombre: string | null; mesa: string; orden: number | null; anio_nacimiento: number | null };
 export type AppUser = { email: string; user_type: "superadmin" | "administrador" | "dirigente" | "operador"; allowed_modules: string[]; active: boolean; candidate_id?: number | null; bloque_id?: number | null };
 export type ManagedUser = AppUser & { user_id: string; created_at?: string };
-export type Candidato = { id: number; nombre: string; cargo: "legislador" | "concejal" | "otro"; activo: boolean; bloque_id?: number | null };
+export type Candidato = { id: number; nombre: string; cargo: "legislador" | "concejal" | "delegado_comunal" | "otro"; activo: boolean; bloque_id?: number | null };
 export type Bloque = { id: number; nombre: string; activo: boolean };
 
 export async function listCandidatos(token: string, onlyActive = false): Promise<Candidato[]> {
