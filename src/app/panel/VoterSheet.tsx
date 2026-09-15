@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { SUPABASE_URL, SUPABASE_KEY, Voter, electoralRoles, decodeJwtSub, rpc, copyText } from "./shared";
+import { SUPABASE_URL, SUPABASE_KEY, Voter, Candidato, electoralRoles, decodeJwtSub, rpc, copyText, listCandidatos } from "./shared";
 
 const FISCAL_ROLES = ["fiscal", "fiscal_general", "fiscal_mesa", "fiscal_suplente", "coordinador_circuito", "coordinador_general"];
 
@@ -15,13 +15,17 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
   const [copied, setCopied] = useState(false);
   const [alreadyHasCode, setAlreadyHasCode] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [candidateId, setCandidateId] = useState("");
 
   useEffect(() => {
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
     Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/voter_profiles?select=telefono,estado,observaciones&padron_id=eq.${voter.id}`, { headers }).then((r) => r.json()),
       fetch(`${SUPABASE_URL}/rest/v1/person_roles?select=role&padron_id=eq.${voter.id}&active=is.true`, { headers }).then((r) => r.json()),
-    ]).then(([profile, assigned]) => {
+      listCandidatos(token, true),
+      rpc(token, "my_candidate_id").catch(() => null),
+    ]).then(([profile, assigned, candidatosList, myCandidateId]) => {
       if (profile?.[0]) {
         setPhone(profile[0].telefono || "");
         setStatus(profile[0].estado || "sin_contactar");
@@ -30,6 +34,8 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
       const current = (assigned || []).map((item: { role: string }) => item.role);
       setRoles(current);
       setSavedRoles(current);
+      setCandidatos(candidatosList);
+      if (myCandidateId) setCandidateId(String(myCandidateId));
     });
   }, [voter.id, token]);
 
@@ -64,11 +70,14 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
   }
 
   async function save() {
-    setSaved("Guardando…");
-    const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
     const added = roles.filter((role) => !savedRoles.includes(role));
     const removed = savedRoles.filter((role) => !roles.includes(role));
-    const candidateId = await rpc(token, "my_candidate_id").catch(() => null);
+    if (added.length && !candidateId) {
+      setSaved("Elegí a qué candidato pertenecen estos roles.");
+      return;
+    }
+    setSaved("Guardando…");
+    const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
     const requests = [
       fetch(`${SUPABASE_URL}/rest/v1/rpc/save_voter_profile`, { method: "POST", headers, body: JSON.stringify({ p_padron_id: voter.id, p_telefono: phone, p_estado: status, p_observaciones: notes }) }),
       ...added.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles`, { method: "POST", headers, body: JSON.stringify({ padron_id: voter.id, role, candidate_id: candidateId }) })),
@@ -82,7 +91,7 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
           await fetch(`${SUPABASE_URL}/rest/v1/mobilizer_voter_links`, {
             method: "POST",
             headers: { ...headers, Prefer: "resolution=ignore-duplicates" },
-            body: JSON.stringify({ voter_id: voter.id, internal_user_id: uid, candidate_id: candidateId }),
+            body: JSON.stringify({ voter_id: voter.id, internal_user_id: uid, candidate_id: Number(candidateId) }),
           });
         }
       }
@@ -138,6 +147,15 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
               <option value="contactado">Contactado</option>
               <option value="confirmado">Confirmado</option>
               <option value="no_contactar">No contactar</option>
+            </select>
+          </label>
+          <label>
+            Candidato al que pertenecen sus roles
+            <select value={candidateId} onChange={(e) => setCandidateId(e.target.value)}>
+              <option value="">Elegí un candidato…</option>
+              {candidatos.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
             </select>
           </label>
           <fieldset>

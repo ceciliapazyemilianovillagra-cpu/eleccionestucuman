@@ -27,7 +27,7 @@ export const modules = ["padron", "dirigentes", "fiscales", "movilizadores", "ch
 export const moduleNames: Record<string, string> = { padron: "Padrón", dirigentes: "Dirigentes", fiscales: "Fiscales", movilizadores: "Movilizadores", choferes: "Choferes", votantes: "Votantes" };
 export const roleNames: Record<AppUser["user_type"], string> = { superadmin: "Superadministrador", administrador: "Administrador", dirigente: "Dirigente", operador: "Operador" };
 export const electoralRoles = [
-  ["dirigente", "Dirigente"], ["chofer", "Chofer"], ["movilizador", "Movilizador"], ["coordinador_circuito", "Coordinador de circuito"], ["fiscal_general", "Fiscal general"], ["fiscal_mesa", "Fiscal de mesa"], ["fiscal_suplente", "Fiscal suplente"], ["colaborador", "Votante"], ["colaborador_comicio", "Colaborador de comicio"], ["coordinador_general", "Coordinador general"], ["candidato", "Candidato"]
+  ["dirigente", "Dirigente administrador"], ["chofer", "Chofer"], ["movilizador", "Movilizador"], ["coordinador_circuito", "Coordinador de circuito"], ["fiscal_general", "Fiscal general"], ["fiscal_mesa", "Fiscal de mesa"], ["fiscal_suplente", "Fiscal suplente"], ["colaborador", "Votante"], ["colaborador_comicio", "Colaborador de comicio"], ["coordinador_general", "Coordinador general"], ["candidato", "Candidato"]
 ] as const;
 
 export async function manageUsers(token: string, body: Record<string, unknown>) {
