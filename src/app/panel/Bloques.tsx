@@ -9,6 +9,9 @@ export function Bloques({ token }: { token: string }) {
   const [nombre, setNombre] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editNombre, setEditNombre] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -53,6 +56,45 @@ export function Bloques({ token }: { token: string }) {
     load();
   }
 
+  function startEdit(b: Bloque) {
+    setEditingId(b.id);
+    setEditNombre(b.nombre);
+    setMessage("");
+  }
+
+  async function saveEdit(id: number) {
+    if (!editNombre.trim()) return;
+    setSaving(true);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bloques?id=eq.${id}`, {
+      method: "PATCH",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: editNombre.trim() }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      setEditingId(null);
+      load();
+    } else {
+      setMessage("No se pudo renombrar el bloque.");
+    }
+  }
+
+  async function remove(b: Bloque) {
+    if (!window.confirm(`¿Borrar el bloque "${b.nombre}"? Esto no se puede deshacer.`)) return;
+    setDeletingId(b.id);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bloques?id=eq.${b.id}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+    });
+    setDeletingId(null);
+    if (res.ok) {
+      setMessage("Bloque borrado.");
+      load();
+    } else {
+      setMessage("No se pudo borrar: este bloque todavía tiene candidatos, usuarios o datos cargados. Desactivalo en vez de borrarlo, o primero borrá/reasigná lo que tiene adentro.");
+    }
+  }
+
   return (
     <div>
       <p className="ext-note" style={{ marginTop: 0 }}>
@@ -67,14 +109,39 @@ export function Bloques({ token }: { token: string }) {
       {!loading && !rows.length && <p className="empty">Todavía no cargaste ningún bloque.</p>}
       <div className="log-list">
         {rows.map((b) => (
-          <div key={b.id} className="log-row" style={{ cursor: "default" }}>
+          <div key={b.id} className="log-row" style={{ cursor: "default", flexWrap: "wrap" }}>
             <span className={`badge ${b.activo ? "ok" : "neutral"}`}>{b.activo ? "Activo" : "Inactivo"}</span>
-            <div style={{ flex: 1 }}>
-              <b>{b.nombre}</b>
+            <div style={{ flex: 1, minWidth: 160 }}>
+              {editingId === b.id ? (
+                <input value={editNombre} onChange={(e) => setEditNombre(e.target.value)} autoFocus />
+              ) : (
+                <b>{b.nombre}</b>
+              )}
             </div>
-            <button className="ext-btn secondary" type="button" onClick={() => toggleActivo(b)}>
-              {b.activo ? "DESACTIVAR" : "ACTIVAR"}
-            </button>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {editingId === b.id ? (
+                <>
+                  <button className="ext-btn" type="button" disabled={saving} onClick={() => saveEdit(b.id)}>
+                    {saving ? "GUARDANDO…" : "GUARDAR"}
+                  </button>
+                  <button className="ext-btn secondary" type="button" onClick={() => setEditingId(null)}>
+                    CANCELAR
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="ext-btn secondary" type="button" onClick={() => startEdit(b)}>
+                    EDITAR
+                  </button>
+                  <button className="ext-btn secondary" type="button" onClick={() => toggleActivo(b)}>
+                    {b.activo ? "DESACTIVAR" : "ACTIVAR"}
+                  </button>
+                  <button className="ext-btn warn" type="button" disabled={deletingId === b.id} onClick={() => remove(b)}>
+                    {deletingId === b.id ? "…" : "BORRAR"}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>
