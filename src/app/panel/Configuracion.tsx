@@ -1,7 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import { Search, Check, Trash2, AlertTriangle, Database, ArrowRight } from "lucide-react";
-import { rpc, formatDateTime, copyText, SUPABASE_URL, SUPABASE_KEY } from "./shared";
+import { rpc, formatDateTime, copyText, SUPABASE_URL, SUPABASE_KEY, Candidato, listCandidatos } from "./shared";
 import { Users } from "./Users";
 import { Candidatos } from "./Candidatos";
 import { Bloques } from "./Bloques";
@@ -435,6 +435,12 @@ function SeguridadSection({ token }: { token: string }) {
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [candidateId, setCandidateId] = useState("");
+  const [candidateConfirmText, setCandidateConfirmText] = useState("");
+  const [resettingCandidate, setResettingCandidate] = useState(false);
+  const [candidateResetMsg, setCandidateResetMsg] = useState("");
+
   async function loadStats() {
     setStatsLoading(true);
     try {
@@ -446,7 +452,31 @@ function SeguridadSection({ token }: { token: string }) {
 
   useEffect(() => {
     loadStats();
+    listCandidatos(token, true).then(setCandidatos);
   }, [token]);
+
+  async function resetCandidateData() {
+    if (!candidateId || candidateConfirmText.trim().toUpperCase() !== "BORRAR") return;
+    const candidato = candidatos.find((c) => String(c.id) === candidateId);
+    if (!window.confirm(`Esto borra los roles, códigos, sesiones y reclamos cargados para "${candidato?.nombre ?? "este candidato"}" (movilizador/chofer/fiscal/votante/dirigente). No se tocan fiscalización, traslados, agenda ni mapa del resto del bloque, ni otros candidatos. ¿Confirmás?`)) return;
+    setResettingCandidate(true);
+    setCandidateResetMsg("");
+    try {
+      const result = await rpc(token, "reset_candidate_data", { p_candidate_id: Number(candidateId) });
+      await fetch(`${SUPABASE_URL}/rest/v1/activity_log`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "internal", module: "seguridad", action: "reset_candidate_data", details: { candidate_id: Number(candidateId), ...result } }),
+      });
+      setCandidateResetMsg("Datos del candidato borrados correctamente.");
+      setCandidateConfirmText("");
+      loadStats();
+    } catch (err) {
+      setCandidateResetMsg(err instanceof Error ? err.message : "No se pudo completar el borrado.");
+    } finally {
+      setResettingCandidate(false);
+    }
+  }
 
   async function resetTestData() {
     if (confirmText.trim().toUpperCase() !== "BORRAR") return;
@@ -498,6 +528,35 @@ function SeguridadSection({ token }: { token: string }) {
           </button>
         </div>
         {resetMsg && <p className="ext-note">{resetMsg}</p>}
+      </div>
+
+      <div className="search-card" style={{ marginBottom: 20, borderLeft: "4px solid #e04b3f" }}>
+        <b style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <AlertTriangle size={16} strokeWidth={2.5} color="#e04b3f" />
+          Borrar datos de un candidato (reset parcial)
+        </b>
+        <p className="ext-note" style={{ margin: "0 0 12px" }}>
+          Borra solo lo cargado para un candidato puntual: sus roles asignados (movilizador/chofer/fiscal/votante/dirigente), códigos, sesiones externas y reclamos.
+          <br />
+          <b>No se toca</b>: asistencia/reportes/cierres de fiscales, traslados, agenda ni mapa (son por bloque, no por candidato) — tampoco otros candidatos del mismo bloque.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <select value={candidateId} onChange={(e) => setCandidateId(e.target.value)} style={{ flex: "1 1 200px" }}>
+            <option value="">Elegí un candidato…</option>
+            {candidatos.map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
+          <input placeholder='Escribí BORRAR para confirmar' value={candidateConfirmText} onChange={(e) => setCandidateConfirmText(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
+          <button
+            className="ext-btn warn"
+            onClick={resetCandidateData}
+            disabled={resettingCandidate || !candidateId || candidateConfirmText.trim().toUpperCase() !== "BORRAR"}
+          >
+            {resettingCandidate ? "BORRANDO…" : "BORRAR DATOS DE ESTE CANDIDATO"}
+          </button>
+        </div>
+        {candidateResetMsg && <p className="ext-note">{candidateResetMsg}</p>}
       </div>
 
       <div className="search-card">
