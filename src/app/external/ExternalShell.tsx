@@ -38,16 +38,25 @@ export function ExternalShell({
                 ←
               </button>
             )}
+            <span className="ext-logo-badge">
+              <img src="/pulso-electoral-logo.png" alt="" />
+            </span>
             <div>
               <small>{eyebrow}</small>
               <h1>{title}</h1>
             </div>
           </div>
-          {onLogout && (
-            <button type="button" className="ext-logout" onClick={onLogout}>
-              Cerrar sesión
-            </button>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
+            <span className="ext-live" aria-label="Conexión en vivo">
+              <span className="ext-live-dot" />
+              En vivo
+            </span>
+            {onLogout && (
+              <button type="button" className="ext-logout" onClick={onLogout}>
+                Cerrar sesión
+              </button>
+            )}
+          </div>
         </div>
         {(person || contextoLabel) && (
           <div className="ext-person-row">
