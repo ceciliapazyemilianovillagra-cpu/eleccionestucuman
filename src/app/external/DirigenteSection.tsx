@@ -3,7 +3,16 @@ import { FormEvent, useEffect, useState } from "react";
 import { Search, UserCheck, Car, ShieldCheck, Users, Flag, Check, X, UserCog, MapPin } from "lucide-react";
 import { callFn } from "./api";
 
-type Person = { id: number; dni: string; apellido_nombre: string; mesa: string | null; circuito_nombre: string | null; current_roles: string[] };
+type Person = {
+  id: number;
+  dni: string;
+  apellido_nombre: string;
+  mesa: string | null;
+  circuito_nombre: string | null;
+  current_roles: string[];
+  current_circuito: string | null;
+  current_supervisor_padron_id: number | null;
+};
 type Assigned = { padron_id: number; roles: string[]; dni: string; apellido_nombre: string; has_code: boolean; disputed: boolean | null };
 type RoleResult = { role: string; status: string; message?: string };
 type Credential = { status: "created" | "existing" | "none"; code: string | null };
@@ -93,8 +102,8 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
     setSelected(p);
     setRoles(p.current_roles.filter((r) => ROLE_OPTIONS.some((o) => o.key === r)));
     setTelefono("");
-    setCircuito("");
-    setSupervisorId("");
+    setCircuito(p.current_circuito ?? "");
+    setSupervisorId(p.current_supervisor_padron_id ? String(p.current_supervisor_padron_id) : "");
     setResults([]);
     setCredential(null);
   }
