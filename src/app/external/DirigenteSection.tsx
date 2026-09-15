@@ -224,6 +224,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
                 </span>
                 <select required value={circuito} onChange={(e) => setCircuito(e.target.value)}>
                   <option value="">Elegí un circuito…</option>
+                  <option value="PENDIENTE">Pendiente de asignación</option>
                   {circuitos.map((c) => (
                     <option key={c.circuito} value={c.circuito}>
                       {c.circuito} {c.circuito_nombre ? `· ${c.circuito_nombre}` : ""}
@@ -237,8 +238,8 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
                 <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6 }}>
                   REPORTA A ESTE FISCAL GENERAL
                 </span>
-                <select required value={supervisorId} onChange={(e) => setSupervisorId(e.target.value)}>
-                  <option value="">Elegí un fiscal general…</option>
+                <select value={supervisorId} onChange={(e) => setSupervisorId(e.target.value)}>
+                  <option value="">Pendiente de asignación (sin fiscal general todavía)</option>
                   {fiscalesGenerales.map((f) => (
                     <option key={f.padron_id} value={f.padron_id}>
                       {f.apellido_nombre} {f.circuito ? `· Circuito ${f.circuito}` : ""}
