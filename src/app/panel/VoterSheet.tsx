@@ -22,7 +22,7 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
     Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/voter_profiles?select=telefono,estado,observaciones&padron_id=eq.${voter.id}`, { headers }).then((r) => r.json()),
-      fetch(`${SUPABASE_URL}/rest/v1/person_roles?select=role&padron_id=eq.${voter.id}&active=is.true`, { headers }).then((r) => r.json()),
+      fetch(`${SUPABASE_URL}/rest/v1/person_roles?select=role,candidate_id&padron_id=eq.${voter.id}&active=is.true`, { headers }).then((r) => r.json()),
       listCandidatos(token, true),
       rpc(token, "my_candidate_id").catch(() => null),
     ]).then(([profile, assigned, candidatosList, myCandidateId]) => {
@@ -31,11 +31,14 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
         setStatus(profile[0].estado || "sin_contactar");
         setNotes(profile[0].observaciones || "");
       }
-      const current = (assigned || []).map((item: { role: string }) => item.role);
+      const assignedRows: { role: string; candidate_id: number | null }[] = assigned || [];
+      const current = assignedRows.map((item) => item.role);
       setRoles(current);
       setSavedRoles(current);
       setCandidatos(candidatosList);
-      if (myCandidateId) setCandidateId(String(myCandidateId));
+      const existingCandidateId = assignedRows.find((item) => item.candidate_id != null)?.candidate_id;
+      if (existingCandidateId) setCandidateId(String(existingCandidateId));
+      else if (myCandidateId) setCandidateId(String(myCandidateId));
     });
   }, [voter.id, token]);
 
@@ -71,8 +74,9 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
 
   async function save() {
     const added = roles.filter((role) => !savedRoles.includes(role));
+    const kept = roles.filter((role) => savedRoles.includes(role));
     const removed = savedRoles.filter((role) => !roles.includes(role));
-    if (added.length && !candidateId) {
+    if (roles.length && !candidateId) {
       setSaved("Elegí a qué candidato pertenecen estos roles.");
       return;
     }
@@ -80,7 +84,8 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
     const requests = [
       fetch(`${SUPABASE_URL}/rest/v1/rpc/save_voter_profile`, { method: "POST", headers, body: JSON.stringify({ p_padron_id: voter.id, p_telefono: phone, p_estado: status, p_observaciones: notes }) }),
-      ...added.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles`, { method: "POST", headers, body: JSON.stringify({ padron_id: voter.id, role, candidate_id: candidateId }) })),
+      ...added.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles`, { method: "POST", headers, body: JSON.stringify({ padron_id: voter.id, role, candidate_id: Number(candidateId) }) })),
+      ...kept.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${voter.id}&role=eq.${role}`, { method: "PATCH", headers, body: JSON.stringify({ candidate_id: Number(candidateId) }) })),
       ...removed.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${voter.id}&role=eq.${role}`, { method: "DELETE", headers })),
     ];
     const results = await Promise.all(requests);
