@@ -9,7 +9,7 @@ import { useRealtime } from "./realtime";
 type Stats = { total_votantes: number; total_mesas: number; total_circuitos: number; por_rol: { role: string; count: number }[] };
 
 const ROLE_LABELS: Record<string, string> = {
-  dirigente: "Dirigentes administradores", chofer: "Choferes", movilizador: "Movilizadores", coordinador_circuito: "Coord. circuito",
+  dirigente: "Dirigentes", chofer: "Choferes", movilizador: "Movilizadores", coordinador_circuito: "Coord. circuito",
   fiscal_general: "Fiscales generales", fiscal_mesa: "Fiscales de mesa", fiscal_suplente: "Fiscales suplentes",
   colaborador: "Votantes", colaborador_comicio: "Colaboradores de comicio", coordinador_general: "Coord. general",
 };

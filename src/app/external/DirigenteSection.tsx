@@ -224,7 +224,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
                 </span>
                 <select required value={circuito} onChange={(e) => setCircuito(e.target.value)}>
                   <option value="">Elegí un circuito…</option>
-                  <option value="PENDIENTE">Pendiente de asignación</option>
+                  {!roles.includes("coordinador_circuito") && <option value="PENDIENTE">Pendiente de asignación</option>}
                   {circuitos.map((c) => (
                     <option key={c.circuito} value={c.circuito}>
                       {c.circuito} {c.circuito_nombre ? `· ${c.circuito_nombre}` : ""}
