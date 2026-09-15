@@ -236,14 +236,14 @@ export function DirigenteSection({ token }: { token: string }) {
           {filteredAssigned.map((p) => {
             const needsCode = p.roles.some((r) => NEEDS_CODE_ROLES.includes(r));
             return (
-              <div className="ext-voter-row" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", overflowX: "auto" }} key={p.padron_id}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 6, minWidth: 0, flex: "1 1 auto" }}>
-                  <b style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.apellido_nombre}</b>
-                  <span className="dni-small" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div className="ext-voter-row" style={{ display: "flex", flexDirection: "column", gap: 6 }} key={p.padron_id}>
+                <div style={{ minWidth: 0 }}>
+                  <b style={{ display: "block", wordBreak: "break-word" }}>{p.apellido_nombre}</b>
+                  <span className="dni-small" style={{ display: "block", wordBreak: "break-word" }}>
                     DNI {p.dni} - {p.roles.map((r) => ROLE_LABEL[r] ?? r).join(", ")}
                   </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, flex: "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                   {p.disputed !== null && <span className={`badge sm ${p.disputed ? "danger" : "ok"}`}>{p.disputed ? "Reclamado" : "Único"}</span>}
                   {needsCode && <span className={`badge sm ${p.has_code ? "ok" : "danger"}`}>{p.has_code ? "Código listo" : "Sin código"}</span>}
                   {needsCode && (

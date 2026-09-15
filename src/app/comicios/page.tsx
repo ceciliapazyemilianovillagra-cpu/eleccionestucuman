@@ -17,6 +17,7 @@ type TabKey = "candidato" | "dirigente" | "movilizador" | "fiscal";
 export default function Comicios() {
   const [token, setToken] = useState("");
   const [person, setPerson] = useState("");
+  const [contexto, setContexto] = useState<{ candidato: string | null; bloque: string | null } | null>(null);
   const [dni, setDni] = useState("");
   const [code, setCode] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -32,6 +33,7 @@ export default function Comicios() {
         if (Array.isArray(d.roles)) {
           setRoles(d.roles);
           setPerson(d.person?.nombre ?? "");
+          setContexto(d.contexto ?? null);
         }
         else {
           clearToken(FN);
@@ -69,6 +71,7 @@ export default function Comicios() {
     if (d.token) {
       setToken(d.token);
       setPerson(d.person?.nombre ?? "");
+      setContexto(d.contexto ?? null);
       setRoles(d.roles || []);
       saveToken(FN, d.token);
     } else {
@@ -81,6 +84,7 @@ export default function Comicios() {
     clearToken(FN);
     setToken("");
     setRoles([]);
+    setContexto(null);
     setTab(null);
     setDni("");
     setCode("");
@@ -107,14 +111,14 @@ export default function Comicios() {
 
   if (!availableTabs.length) {
     return (
-      <ExternalShell eyebrow="PULSO ELECTORAL" title="Sin rol asignado" person={person} onLogout={logout}>
+      <ExternalShell eyebrow="PULSO ELECTORAL" title="Sin rol asignado" person={person} contexto={contexto} onLogout={logout}>
         <p className="empty">Todavía no tenés ningún rol asignado en el equipo. Consultá a tu dirigente.</p>
       </ExternalShell>
     );
   }
 
   return (
-    <ExternalShell eyebrow="PULSO ELECTORAL" title={availableTabs.find((t) => t.key === tab)?.label ?? ""} person={person} onLogout={logout}>
+    <ExternalShell eyebrow="PULSO ELECTORAL" title={availableTabs.find((t) => t.key === tab)?.label ?? ""} person={person} contexto={contexto} onLogout={logout}>
       {availableTabs.length > 1 && (
         <div className="config-tabs" style={{ marginBottom: 14 }}>
           {availableTabs.map((t) => (

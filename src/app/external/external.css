@@ -43,9 +43,10 @@
   background: var(--navy);
   color: #fff;
   padding: calc(20px + env(safe-area-inset-top)) 20px 20px;
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+  display: flex; flex-direction: column; gap: 10px;
   border-bottom: 5px solid var(--yellow, #f2c94c);
 }
+.ext-topbar-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .ext-topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .ext-topbar small { color: #9fd4f5; font-size: 10px; font-weight: 700; letter-spacing: .16em; font-family: var(--font-display); text-transform: uppercase; }
 .ext-topbar h1 { font-size: 21px; margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60vw; font-family: var(--font-display); text-transform: uppercase; font-weight: 700; }
@@ -57,11 +58,18 @@
   border: 1px solid #ffffff33; background: #ffffff14; color: #fff; border-radius: 11px;
   padding: 9px 14px; font-size: 12px; font-weight: 700; flex: none; cursor: pointer;
 }
+.ext-person-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ext-person-pill {
   background: var(--yellow, #f2c94c); color: #241d03; font-weight: 800; font-size: 12px;
-  padding: 7px 12px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw;
+  padding: 7px 12px; border-radius: 999px; white-space: normal; word-break: break-word; max-width: 100%;
   font-family: var(--font-display); letter-spacing: .01em;
 }
+.ext-context-pill {
+  background: #ffffff1f; color: #fff; font-weight: 700; font-size: 11px;
+  padding: 6px 12px; border-radius: 999px; white-space: normal; word-break: break-word; max-width: 100%;
+  font-family: var(--font-display); letter-spacing: .01em;
+}
+.ext-countdown { color: #9fd4f5; font-size: 11px; font-weight: 600; }
 
 .ext-body { width: min(100%, 760px); margin: 0 auto; padding: 18px 20px 10px; display: grid; gap: 18px; }
 
