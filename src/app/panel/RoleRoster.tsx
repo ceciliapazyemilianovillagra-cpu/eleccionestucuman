@@ -15,7 +15,7 @@ type RolePerson = {
   last_access_at: string | null;
 };
 
-export function RoleRoster({ token, role, label }: { token: string; role: "movilizador" | "chofer"; label: string }) {
+export function RoleRoster({ token, role, label }: { token: string; role: string; label: string }) {
   const [rows, setRows] = useState<RolePerson[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");

@@ -134,11 +134,11 @@ function FiscalesTab({ token }: { token: string }) {
             <div className="progress-bar"><i style={{ width: `${pct(stats.mesas_cerradas, stats.total_mesas)}%` }} /></div>
             <div className="progress-pct"><span>{stats.mesas_cerradas} mesas</span><span>{pct(stats.mesas_cerradas, stats.total_mesas)}%</span></div>
           </div>
-          <div className="stat-card">
+          <div className="stat-card" style={{ "--stat-accent": "var(--blue)" } as React.CSSProperties}>
             <span className="stat-seal"><b>{stats.votantes_reportados.toLocaleString("es-AR")}</b></span>
             <p>Votantes reportados</p>
           </div>
-          <div className="stat-card">
+          <div className="stat-card" style={{ "--stat-accent": "var(--navy)" } as React.CSSProperties}>
             <span className="stat-seal"><b>{stats.votos_nagle.toLocaleString("es-AR")}</b></span>
             <p>Votos Nagle</p>
           </div>

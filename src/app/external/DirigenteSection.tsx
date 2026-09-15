@@ -1,6 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
-import { Search, UserCheck, Car, ShieldCheck, Users, Flag, Check } from "lucide-react";
+import { Search, UserCheck, Car, ShieldCheck, Users, Flag, Check, X } from "lucide-react";
 import { callFn } from "./api";
 
 type Person = { id: number; dni: string; apellido_nombre: string; mesa: string | null; circuito_nombre: string | null; current_roles: string[] };
@@ -38,6 +38,7 @@ export function DirigenteSection({ token }: { token: string }) {
   const [resettingId, setResettingId] = useState<number | null>(null);
   const [resetCode, setResetCode] = useState<{ padron_id: number; code: string } | null>(null);
   const [listFilter, setListFilter] = useState("");
+  const [removingId, setRemovingId] = useState<number | null>(null);
 
   async function loadAssigned() {
     setListLoading(true);
@@ -90,6 +91,18 @@ export function DirigenteSection({ token }: { token: string }) {
     const d = await callFn("comicios", token, { action: "dirigente_reset_code", padron_id: padronId });
     setResettingId(null);
     if (d.code) setResetCode({ padron_id: padronId, code: d.code });
+  }
+
+  async function removeAssigned(padronId: number, nombre: string) {
+    if (!window.confirm(`¿Eliminar a ${nombre} de tu lista? Se le sacan los roles que le asignaste.`)) return;
+    setRemovingId(padronId);
+    const d = await callFn("comicios", token, { action: "dirigente_remove_assigned", padron_id: padronId });
+    setRemovingId(null);
+    if (d.success) {
+      setAssignedList((prev) => prev.filter((p) => p.padron_id !== padronId));
+    } else {
+      window.alert(d.error || "No se pudo eliminar.");
+    }
   }
 
   const filteredAssigned = assignedList.filter((a) => {
@@ -257,6 +270,15 @@ export function DirigenteSection({ token }: { token: string }) {
                       {resettingId === p.padron_id ? "…" : p.has_code ? "BLANQUEAR" : "GENERAR"}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    className="ext-iconbtn-x"
+                    aria-label="Eliminar"
+                    disabled={removingId === p.padron_id}
+                    onClick={() => removeAssigned(p.padron_id, p.apellido_nombre)}
+                  >
+                    <X size={14} strokeWidth={2.5} />
+                  </button>
                 </div>
               </div>
             );

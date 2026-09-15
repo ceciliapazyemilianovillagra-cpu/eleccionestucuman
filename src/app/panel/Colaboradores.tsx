@@ -22,6 +22,7 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Voter | null>(null);
+  const [filter, setFilter] = useState<"all" | "unicos" | "disputed">("all");
 
   async function load(q = "") {
     setLoading(true);
@@ -42,10 +43,11 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
   const total = rows.length;
   const disputed = rows.filter((r) => r.disputed).length;
   const unicos = total - disputed;
+  const filteredRows = rows.filter((r) => (filter === "unicos" ? !r.disputed : filter === "disputed" ? r.disputed : true));
 
   async function exportExcel() {
     const XLSX = await import("xlsx");
-    const data = rows.map((r) => ({
+    const data = filteredRows.map((r) => ({
       DNI: r.dni,
       "Apellido y Nombre": r.apellido_nombre,
       Mesa: r.mesa ?? "",
@@ -68,7 +70,7 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
     autoTable(doc, {
       startY: 20,
       head: [["DNI", "Apellido y Nombre", "Mesa", "Circuito", "Estado", "Cargado por", "Candidato"]],
-      body: rows.map((r) => [r.dni, r.apellido_nombre, r.mesa ?? "", r.circuito_nombre ?? "", r.disputed ? "Reclamado" : "Único", r.loaded_by_nombre ?? r.loaded_by_email ?? "", r.candidate_nombre ?? ""]),
+      body: filteredRows.map((r) => [r.dni, r.apellido_nombre, r.mesa ?? "", r.circuito_nombre ?? "", r.disputed ? "Reclamado" : "Único", r.loaded_by_nombre ?? r.loaded_by_email ?? "", r.candidate_nombre ?? ""]),
       styles: { fontSize: 8 },
     });
     doc.save("votantes.pdf");
@@ -86,19 +88,27 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
       </header>
       <section className="padron-content">
         <div className="stats-grid">
-          <div className="stat-card">
+          <button type="button" className="stat-card" style={{ "--stat-accent": "var(--navy)" } as React.CSSProperties} onClick={() => setFilter("all")}>
             <span className="stat-seal"><b>{total}</b></span>
             <p>Cargados</p>
-          </div>
-          <div className="stat-card">
+          </button>
+          <button type="button" className="stat-card" style={{ "--stat-accent": "var(--green)" } as React.CSSProperties} onClick={() => setFilter("unicos")}>
             <span className="stat-seal"><b>{unicos}</b></span>
             <p>Únicos</p>
-          </div>
-          <div className="stat-card">
+          </button>
+          <button type="button" className="stat-card" style={{ "--stat-accent": "#a3231e" } as React.CSSProperties} onClick={() => setFilter("disputed")}>
             <span className="stat-seal"><b>{disputed}</b></span>
             <p>Reclamados</p>
-          </div>
+          </button>
         </div>
+        {filter !== "all" && (
+          <p className="ext-note" style={{ margin: "0 0 10px" }}>
+            Mostrando solo: {filter === "unicos" ? "únicos" : "reclamados"}.{" "}
+            <button type="button" className="ext-btn secondary" style={{ padding: "4px 10px", fontSize: 11 }} onClick={() => setFilter("all")}>
+              QUITAR FILTRO
+            </button>
+          </p>
+        )}
         <form
           className="search-card"
           onSubmit={(e) => {
@@ -114,20 +124,20 @@ export function Colaboradores({ token, close }: { token: string; close: () => vo
         </form>
         <div className="results-head">
           <b>Resultados</b>
-          <span>{rows.length} mostrados</span>
+          <span>{filteredRows.length} mostrados</span>
         </div>
         <div className="export-row">
-          <button className="ext-btn secondary" type="button" onClick={exportExcel} disabled={!rows.length}>
+          <button className="ext-btn secondary" type="button" onClick={exportExcel} disabled={!filteredRows.length}>
             EXPORTAR EXCEL
           </button>
-          <button className="ext-btn secondary" type="button" onClick={exportPdf} disabled={!rows.length}>
+          <button className="ext-btn secondary" type="button" onClick={exportPdf} disabled={!filteredRows.length}>
             EXPORTAR PDF
           </button>
         </div>
         {loading && <p className="empty">Buscando…</p>}
-        {!loading && !rows.length && <p className="empty">No hay votantes cargados.</p>}
+        {!loading && !filteredRows.length && <p className="empty">No hay votantes para mostrar.</p>}
         <div className="results">
-          {rows.map((r) => (
+          {filteredRows.map((r) => (
             <button
               key={r.padron_id}
               className="voter-row compact-row"

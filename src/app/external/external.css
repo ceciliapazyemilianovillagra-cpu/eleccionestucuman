@@ -71,6 +71,13 @@
 }
 .ext-countdown { color: #9fd4f5; font-size: 11px; font-weight: 600; }
 
+.ext-iconbtn-x {
+  border: 1px solid #e5b3ae; background: #fff0ef; color: #a3231e; border-radius: 8px;
+  width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+  flex: none; cursor: pointer;
+}
+.ext-iconbtn-x:disabled { opacity: .5; cursor: default; }
+
 .ext-body { width: min(100%, 760px); margin: 0 auto; padding: 18px 20px 10px; display: grid; gap: 18px; }
 
 /* ---- Cards ---- */
@@ -138,11 +145,13 @@
 .ext-voter-row-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
 .ext-voter-row b { font-size: 13.5px; color: var(--ink); display: block; }
 .ext-voter-row .dni-small { color: var(--muted); font-size: 11px; }
-.ext-status-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.ext-status-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
 .ext-status-btn { border: 1.5px solid #dbe8f1; background: #fff; border-radius: 10px; padding: 9px 4px; font-size: 11px; font-weight: 800; color: var(--ink); cursor: pointer; }
 .ext-status-btn.active-buscado { background: #fff3e0; border-color: #f2a23a; color: #8a5407; }
 .ext-status-btn.active-votando { background: #e6f0fc; border-color: var(--blue); color: var(--blue); }
 .ext-status-btn.active-devuelta { background: #e3faf0; border-color: var(--green); color: #0f6b3a; }
+.ext-status-btn.active-ausente { background: #fff0ef; border-color: #a3231e; color: #a3231e; }
+@media (max-width: 420px) { .ext-status-btns { grid-template-columns: repeat(2, 1fr); } }
 .ext-empty { text-align: center; color: var(--muted); padding: 26px 10px; font-size: 13px; }
 .ext-barcode-box { margin-top: 10px; padding: 12px; background: #f6faff; border: 1px solid #dbe8f1; border-radius: 12px; display: grid; gap: 8px; }
 .ext-barcode-box label { font-size: 11px; font-weight: 700; color: var(--muted); }

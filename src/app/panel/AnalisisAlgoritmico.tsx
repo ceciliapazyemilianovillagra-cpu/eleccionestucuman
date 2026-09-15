@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { RefreshCw, ExternalLink } from "lucide-react";
-import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY } from "./shared";
+import { rpc, formatDateTime, SUPABASE_URL, SUPABASE_KEY, Candidato, listCandidatos } from "./shared";
 import { useRealtime } from "./realtime";
 import { ScrollTopButton } from "./ScrollTopButton";
 
@@ -10,7 +10,7 @@ type Stats = {
   analizadas: number;
   menciona_tucuman_7d: number;
   menciona_smt_7d: number;
-  menciona_nagle_7d: number;
+  menciona_candidato_7d: number;
   tono_favorable: number;
   tono_neutro: number;
   tono_desfavorable: number;
@@ -24,7 +24,7 @@ type Article = {
   published_at: string | null;
   mentions_tucuman: boolean;
   mentions_smt: boolean;
-  mentions_nagle: boolean;
+  candidato_mencionado: boolean;
   tono: "favorable" | "neutro" | "desfavorable" | null;
   analysis_note: string | null;
   analyzed_at: string | null;
@@ -47,7 +47,6 @@ type Cobertura = {
 
 const FILTERS = [
   { key: "todos", label: "Todas" },
-  { key: "nagle", label: "Nagle" },
   { key: "smt", label: "San Miguel" },
   { key: "tucuman", label: "Tucumán" },
   { key: "sin_analizar", label: "Sin analizar" },
@@ -61,17 +60,27 @@ export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: str
   const [articles, setArticles] = useState<Article[]>([]);
   const [temas, setTemas] = useState<Temas | null>(null);
   const [cobertura, setCobertura] = useState<Cobertura[]>([]);
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("nagle");
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("todos");
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [candidateId, setCandidateId] = useState("");
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState("");
 
-  async function load(f = filter) {
+  useEffect(() => {
+    listCandidatos(token, true).then((list) => {
+      setCandidatos(list);
+      setCandidateId((current) => current || (list[0] ? String(list[0].id) : ""));
+    });
+  }, [token]);
+
+  async function load(f = filter, cid = candidateId) {
     setLoading(true);
+    const pCandidateId = cid ? Number(cid) : null;
     try {
       const [s, a, t, c] = await Promise.all([
-        rpc(token, "media_monitor_stats"),
-        rpc(token, "media_monitor_articles", { p_filter: f, p_limit: 60 }),
+        rpc(token, "media_monitor_stats", { p_candidate_id: pCandidateId }),
+        rpc(token, "media_monitor_articles", { p_filter: f, p_limit: 60, p_candidate_id: pCandidateId }),
         rpc(token, "media_monitor_temas", { p_days: 30 }).catch(() => null),
         rpc(token, "territorio_cobertura").catch(() => []),
       ]);
@@ -88,10 +97,10 @@ export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: str
   }
 
   useEffect(() => {
-    load(filter);
-  }, [token, filter]);
+    if (candidateId) load(filter, candidateId);
+  }, [token, filter, candidateId]);
 
-  useRealtime(["media_articles"], token, () => load(filter));
+  useRealtime(["media_articles", "media_candidate_mentions"], token, () => load(filter, candidateId));
 
   async function runNow() {
     setRunning(true);
@@ -105,7 +114,7 @@ export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: str
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "No se pudo ejecutar.");
       setMessage(`Listo: ${data.analyzed} notas analizadas en esta pasada.`);
-      await load(filter);
+      await load(filter, candidateId);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "No se pudo ejecutar el barrido.");
     } finally {
@@ -125,15 +134,26 @@ export function AnalisisAlgoritmico({ token, close, isSuperadmin }: { token: str
       </header>
       <section className="padron-content">
         <p className="ext-note" style={{ marginTop: 0 }}>
-          Barrido diario (automático, 8am) de medios digitales de Tucumán, clasificado con IA: menciones de Tucumán, San Miguel de Tucumán y Ernesto Nagle, con el tono de cada nota.
+          Barrido diario (automático, 8am) de medios digitales de Tucumán, clasificado con IA: menciones de Tucumán, San Miguel de Tucumán y de cada candidato, con el tono de cada nota.
         </p>
+
+        <label style={{ display: "block", marginBottom: 14 }}>
+          <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6 }}>
+            CANDIDATO ANALIZADO
+          </span>
+          <select value={candidateId} onChange={(e) => setCandidateId(e.target.value)}>
+            {candidatos.map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
+        </label>
 
         {stats && (
           <div className="stats-grid">
-            <div className="stat-card"><span className="stat-seal"><b>{stats.menciona_nagle_7d}</b></span><p>Nagle · 7 días</p></div>
-            <div className="stat-card"><span className="stat-seal"><b>{stats.menciona_smt_7d}</b></span><p>San Miguel · 7 días</p></div>
-            <div className="stat-card"><span className="stat-seal"><b>{stats.menciona_tucuman_7d}</b></span><p>Tucumán · 7 días</p></div>
-            <div className="stat-card"><span className="stat-seal"><b>{stats.total}</b></span><p>Notas rastreadas</p></div>
+            <div className="stat-card" style={{ "--stat-accent": "var(--yellow)" } as React.CSSProperties}><span className="stat-seal"><b>{stats.menciona_candidato_7d}</b></span><p>Candidato · 7 días</p></div>
+            <div className="stat-card" style={{ "--stat-accent": "var(--blue)" } as React.CSSProperties}><span className="stat-seal"><b>{stats.menciona_smt_7d}</b></span><p>San Miguel · 7 días</p></div>
+            <div className="stat-card" style={{ "--stat-accent": "var(--navy)" } as React.CSSProperties}><span className="stat-seal"><b>{stats.menciona_tucuman_7d}</b></span><p>Tucumán · 7 días</p></div>
+            <div className="stat-card" style={{ "--stat-accent": "var(--green)" } as React.CSSProperties}><span className="stat-seal"><b>{stats.total}</b></span><p>Notas rastreadas</p></div>
           </div>
         )}
 

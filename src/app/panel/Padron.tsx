@@ -2,6 +2,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { SUPABASE_URL, SUPABASE_KEY, Voter, rpc } from "./shared";
 import { VoterSheet } from "./VoterSheet";
+import { RoleRoster } from "./RoleRoster";
 import { ScrollTopButton } from "./ScrollTopButton";
 import { useRealtime } from "./realtime";
 
@@ -13,6 +14,12 @@ const ROLE_LABELS: Record<string, string> = {
   colaborador: "Votantes", colaborador_comicio: "Colaboradores de comicio", coordinador_general: "Coord. general",
 };
 
+const ROLE_COLORS: Record<string, string> = {
+  dirigente: "var(--navy)", chofer: "var(--blue)", movilizador: "var(--green)", coordinador_circuito: "var(--navy)",
+  fiscal_general: "var(--blue)", fiscal_mesa: "var(--green)", fiscal_suplente: "var(--navy)",
+  colaborador: "var(--yellow)", colaborador_comicio: "var(--blue)", coordinador_general: "var(--navy)",
+};
+
 export function Padron({ token, close }: { token: string; close: () => void }) {
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState<Voter[]>([]);
@@ -21,6 +28,7 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
   const [message, setMessage] = useState("Buscá por DNI completo, apellido o nombre.");
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [roleView, setRoleView] = useState<string | null>(null);
 
   function loadStats() {
     setStatsLoading(true);
@@ -81,6 +89,15 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
         <img src="/icon.svg" alt="Logo" />
       </header>
       <section className="padron-content">
+        {roleView ? (
+          <>
+            <button className="ext-btn secondary" style={{ marginBottom: 12 }} onClick={() => setRoleView(null)}>
+              ← VOLVER AL DASHBOARD
+            </button>
+            <RoleRoster token={token} role={roleView} label={ROLE_LABELS[roleView] ?? roleView} />
+          </>
+        ) : (
+          <>
         <button className="ext-btn secondary" style={{ marginBottom: 12 }} onClick={loadStats} disabled={statsLoading}>
           {statsLoading ? "ACTUALIZANDO…" : "ACTUALIZAR DASHBOARD"}
         </button>
@@ -88,17 +105,23 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
           <div className="stats-grid">
             <div className="stat-card">
               <span className="stat-seal"><b>{stats.total_votantes.toLocaleString("es-AR")}</b></span>
-              <p>Votantes</p>
+              <p>Votantes en padrón</p>
             </div>
             <div className="stat-card">
               <span className="stat-seal"><b>{stats.total_mesas.toLocaleString("es-AR")}</b></span>
               <p>Mesas</p>
             </div>
             {stats.por_rol.map((r) => (
-              <div className="stat-card" key={r.role}>
+              <button
+                type="button"
+                className="stat-card"
+                key={r.role}
+                style={{ "--stat-accent": ROLE_COLORS[r.role] ?? "var(--sky)" } as React.CSSProperties}
+                onClick={() => setRoleView(r.role)}
+              >
                 <span className="stat-seal"><b>{r.count.toLocaleString("es-AR")}</b></span>
                 <p>{ROLE_LABELS[r.role] ?? r.role}</p>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -128,6 +151,8 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
             </button>
           ))}
         </div>
+          </>
+        )}
       </section>
       {selected && <VoterSheet voter={selected} token={token} close={() => setSelected(null)} />}
       <ScrollTopButton />

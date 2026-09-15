@@ -1,6 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { callFn } from "./api";
 import { useGeolocation } from "./useGeolocation";
 
@@ -23,13 +23,14 @@ type MyVoter = {
   dni: string;
   apellido_nombre: string;
   disputed: boolean;
-  last_status: "buscado" | "votando" | "devuelta" | null;
+  last_status: "buscado" | "votando" | "devuelta" | "ausente" | null;
   mine_as: "cargado" | "asignado";
   chofer_nombre: string | null;
   can_edit_status: boolean;
+  can_remove: boolean;
 };
 
-const STATUS_LABEL: Record<string, string> = { buscado: "Buscado", votando: "Votando", devuelta: "Devuelta" };
+const STATUS_LABEL: Record<string, string> = { buscado: "Buscado", votando: "Votando", devuelta: "Devuelta", ausente: "Ausente" };
 
 export function MovilizadorChoferSection({ token, isMovilizador, isChofer }: { token: string; isMovilizador: boolean; isChofer: boolean }) {
   const [query, setQuery] = useState("");
@@ -78,7 +79,9 @@ export function MovilizadorChoferSection({ token, isMovilizador, isChofer }: { t
     }
   }
 
-  async function markStatus(voterId: number, status: "buscado" | "votando" | "devuelta", barcode?: string) {
+  const [removingId, setRemovingId] = useState<number | null>(null);
+
+  async function markStatus(voterId: number, status: "buscado" | "votando" | "devuelta" | "ausente", barcode?: string) {
     setMarkingId(voterId);
     const point = await getLocation();
     const d = await callFn("comicios", token, {
@@ -101,7 +104,7 @@ export function MovilizadorChoferSection({ token, isMovilizador, isChofer }: { t
     }
   }
 
-  function handleStatusClick(voterId: number, status: "buscado" | "votando" | "devuelta") {
+  function handleStatusClick(voterId: number, status: "buscado" | "votando" | "devuelta" | "ausente") {
     if (status === "devuelta") {
       setDevolviendoId(voterId);
       setCodigoBarra("");
@@ -117,6 +120,18 @@ export function MovilizadorChoferSection({ token, isMovilizador, isChofer }: { t
       return;
     }
     markStatus(voterId, "devuelta", codigoBarra.trim());
+  }
+
+  async function removeVoter(voterId: number, nombre: string) {
+    if (!window.confirm(`¿Eliminar a ${nombre} de tu lista de votantes?`)) return;
+    setRemovingId(voterId);
+    const d = await callFn("comicios", token, { action: "remove_voter", voter_id: voterId });
+    setRemovingId(null);
+    if (d.success) {
+      setMyVoters((prev) => prev.filter((v) => v.voter_id !== voterId));
+    } else {
+      window.alert(d.error || "No se pudo eliminar.");
+    }
   }
 
   async function assignChofer(voterId: number) {
@@ -217,11 +232,24 @@ export function MovilizadorChoferSection({ token, isMovilizador, isChofer }: { t
                     {v.chofer_nombre && ` · Chofer: ${v.chofer_nombre}`}
                   </span>
                 </div>
-                <span className={`badge ${v.disputed ? "danger" : "ok"}`}>{v.disputed ? "Reclamado" : "Único"}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span className={`badge ${v.disputed ? "danger" : "ok"}`}>{v.disputed ? "Reclamado" : "Único"}</span>
+                  {v.can_remove && (
+                    <button
+                      type="button"
+                      className="ext-iconbtn-x"
+                      aria-label="Eliminar"
+                      disabled={removingId === v.voter_id}
+                      onClick={() => removeVoter(v.voter_id, v.apellido_nombre)}
+                    >
+                      <X size={14} strokeWidth={2.5} />
+                    </button>
+                  )}
+                </div>
               </div>
               {v.can_edit_status && (
                 <div className="ext-status-btns">
-                  {(["buscado", "votando", "devuelta"] as const).map((s) => (
+                  {(["buscado", "votando", "devuelta", "ausente"] as const).map((s) => (
                     <button
                       key={s}
                       className={`ext-status-btn ${v.last_status === s ? `active-${s}` : ""}`}
