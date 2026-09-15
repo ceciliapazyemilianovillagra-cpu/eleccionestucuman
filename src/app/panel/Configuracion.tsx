@@ -4,6 +4,7 @@ import { Search, Check, Trash2, AlertTriangle, Database, ArrowRight } from "luci
 import { rpc, formatDateTime, copyText, SUPABASE_URL, SUPABASE_KEY } from "./shared";
 import { Users } from "./Users";
 import { Candidatos } from "./Candidatos";
+import { Bloques } from "./Bloques";
 import { BulkRoles } from "./BulkRoles";
 import { BulkUbicaciones } from "./BulkUbicaciones";
 import { Apariencia } from "./Apariencia";
@@ -555,6 +556,7 @@ function SeguridadSection({ token }: { token: string }) {
 
 const TABS = [
   { key: "usuarios", label: "USUARIOS", superadminOnly: false },
+  { key: "bloques", label: "BLOQUES", superadminOnly: true },
   { key: "candidatos", label: "CANDIDATOS", superadminOnly: true },
   { key: "roles", label: "ROLES", superadminOnly: false },
   { key: "ubicaciones", label: "UBICACIONES", superadminOnly: false },
@@ -590,6 +592,7 @@ export function Configuracion({ token, close, initialTab, isSuperadmin }: { toke
           ))}
         </div>
         {tab === "usuarios" && <Users token={token} />}
+        {tab === "bloques" && <Bloques token={token} />}
         {tab === "candidatos" && <Candidatos token={token} />}
         {tab === "roles" && <BulkRoles token={token} />}
         {tab === "ubicaciones" && <BulkUbicaciones token={token} />}

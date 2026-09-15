@@ -4,12 +4,20 @@ export const SUPABASE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjZHRiaW5xbHN2c3ZtcnlteWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzNDU3NTQsImV4cCI6MjEwMzkyMTc1NH0.Dha8bpiFQ7THgKszkFak1vn5XrsY0XZWz_Lu9MGMKz0";
 
 export type Voter = { id: number; dni: string; apellido_nombre: string; domicilio: string | null; circuito: string; circuito_nombre: string | null; mesa: string; orden: number | null; anio_nacimiento: number | null };
-export type AppUser = { email: string; user_type: "superadmin" | "administrador" | "dirigente" | "operador"; allowed_modules: string[]; active: boolean; candidate_id?: number | null };
+export type AppUser = { email: string; user_type: "superadmin" | "administrador" | "dirigente" | "operador"; allowed_modules: string[]; active: boolean; candidate_id?: number | null; bloque_id?: number | null };
 export type ManagedUser = AppUser & { user_id: string; created_at?: string };
-export type Candidato = { id: number; nombre: string; cargo: "legislador" | "concejal" | "otro"; activo: boolean };
+export type Candidato = { id: number; nombre: string; cargo: "legislador" | "concejal" | "otro"; activo: boolean; bloque_id?: number | null };
+export type Bloque = { id: number; nombre: string; activo: boolean };
 
 export async function listCandidatos(token: string, onlyActive = false): Promise<Candidato[]> {
-  const url = `${SUPABASE_URL}/rest/v1/candidatos?select=id,nombre,cargo,activo${onlyActive ? "&activo=is.true" : ""}&order=nombre.asc`;
+  const url = `${SUPABASE_URL}/rest/v1/candidatos?select=id,nombre,cargo,activo,bloque_id${onlyActive ? "&activo=is.true" : ""}&order=nombre.asc`;
+  const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` } });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function listBloques(token: string, onlyActive = false): Promise<Bloque[]> {
+  const url = `${SUPABASE_URL}/rest/v1/bloques?select=id,nombre,activo${onlyActive ? "&activo=is.true" : ""}&order=nombre.asc`;
   const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` } });
   if (!res.ok) return [];
   return res.json();

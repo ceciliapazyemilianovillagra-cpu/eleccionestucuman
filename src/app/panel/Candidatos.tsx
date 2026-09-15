@@ -1,21 +1,23 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
-import { SUPABASE_URL, SUPABASE_KEY, Candidato } from "./shared";
+import { SUPABASE_URL, SUPABASE_KEY, Candidato, Bloque, listBloques } from "./shared";
 import { useRealtime } from "./realtime";
 
 const CARGO_LABEL: Record<string, string> = { legislador: "Legislador", concejal: "Concejal", otro: "Otro" };
 
 export function Candidatos({ token }: { token: string }) {
   const [rows, setRows] = useState<Candidato[]>([]);
+  const [bloques, setBloques] = useState<Bloque[]>([]);
   const [loading, setLoading] = useState(true);
   const [nombre, setNombre] = useState("");
   const [cargo, setCargo] = useState<Candidato["cargo"]>("legislador");
+  const [bloqueId, setBloqueId] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   async function load() {
     setLoading(true);
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/candidatos?select=id,nombre,cargo,activo&order=nombre.asc`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/candidatos?select=id,nombre,cargo,activo,bloque_id&order=nombre.asc`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
     });
     setRows(res.ok ? await res.json() : []);
@@ -24,18 +26,26 @@ export function Candidatos({ token }: { token: string }) {
 
   useEffect(() => {
     load();
+    listBloques(token, true).then((list) => {
+      setBloques(list);
+      setBloqueId((current) => current || (list[0] ? String(list[0].id) : ""));
+    });
   }, [token]);
 
   useRealtime(["candidatos"], token, load);
 
   async function create(e: FormEvent) {
     e.preventDefault();
+    if (!bloqueId) {
+      setMessage("Elegí a qué bloque pertenece este candidato.");
+      return;
+    }
     setSaving(true);
     setMessage("");
     const res = await fetch(`${SUPABASE_URL}/rest/v1/candidatos`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ nombre, cargo }),
+      body: JSON.stringify({ nombre, cargo, bloque_id: Number(bloqueId) }),
     });
     setSaving(false);
     if (res.ok) {
@@ -69,6 +79,12 @@ export function Candidatos({ token }: { token: string }) {
           <option value="concejal">Concejal</option>
           <option value="otro">Otro</option>
         </select>
+        <select required value={bloqueId} onChange={(e) => setBloqueId(e.target.value)}>
+          <option value="" disabled>Bloque…</option>
+          {bloques.map((b) => (
+            <option key={b.id} value={b.id}>{b.nombre}</option>
+          ))}
+        </select>
         <button className="ext-btn" disabled={saving}>{saving ? "GUARDANDO…" : "AGREGAR"}</button>
       </form>
       {message && <p className="ext-note">{message}</p>}
@@ -80,7 +96,9 @@ export function Candidatos({ token }: { token: string }) {
             <span className={`badge ${c.activo ? "ok" : "neutral"}`}>{c.activo ? "Activo" : "Inactivo"}</span>
             <div style={{ flex: 1 }}>
               <b>{c.nombre}</b>
-              <p>{CARGO_LABEL[c.cargo]}</p>
+              <p>
+                {CARGO_LABEL[c.cargo]} · {bloques.find((b) => b.id === c.bloque_id)?.nombre ?? "Sin bloque"}
+              </p>
             </div>
             <button className="ext-btn secondary" type="button" onClick={() => toggleActivo(c)}>
               {c.activo ? "DESACTIVAR" : "ACTIVAR"}

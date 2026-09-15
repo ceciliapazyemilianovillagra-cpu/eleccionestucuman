@@ -1,7 +1,9 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, UploadCloud, Download } from "lucide-react";
-import { AppUser, Candidato, ManagedUser, listCandidatos, manageUsers, modules, moduleNames, roleNames } from "./shared";
+import { AppUser, Bloque, Candidato, ManagedUser, listBloques, listCandidatos, manageUsers, modules, moduleNames, roleNames } from "./shared";
+
+const BLOQUE_REQUIRED_TYPES: AppUser["user_type"][] = ["dirigente", "administrador"];
 import { useRealtime } from "./realtime";
 
 const BULK_CHUNK_SIZE = 25;
@@ -17,6 +19,8 @@ export function Users({ token }: { token: string }) {
   const [allowedModules, setAllowedModules] = useState<string[]>(["padron"]);
   const [candidateId, setCandidateId] = useState<string>("");
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [bloqueId, setBloqueId] = useState<string>("");
+  const [bloques, setBloques] = useState<Bloque[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -52,7 +56,10 @@ export function Users({ token }: { token: string }) {
   useEffect(() => {
     loadUsers();
     listCandidatos(token, true).then(setCandidatos);
+    listBloques(token, true).then(setBloques);
   }, [token]);
+
+  const candidatosDelBloque = candidatos.filter((c) => !bloqueId || c.bloque_id === Number(bloqueId));
 
   useRealtime(["app_user_roles"], token, loadUsers);
 
@@ -65,7 +72,7 @@ export function Users({ token }: { token: string }) {
     setSaving(true);
     setMessage("");
     try {
-      await manageUsers(token, { action: "create", email, password, user_type: userType, allowed_modules: allowedModules, candidate_id: candidateId || null });
+      await manageUsers(token, { action: "create", email, password, user_type: userType, allowed_modules: allowedModules, candidate_id: candidateId || null, bloque_id: bloqueId || null });
       setEmail("");
       setPassword("");
       setUserType("operador");
@@ -230,12 +237,23 @@ export function Users({ token }: { token: string }) {
                 <option value="superadmin">Superadministrador</option>
               </select>
             </label>
+            {BLOQUE_REQUIRED_TYPES.includes(userType) && (
+              <label>
+                Bloque al que pertenece
+                <select required value={bloqueId} onChange={(event) => { setBloqueId(event.target.value); setCandidateId(""); }}>
+                  <option value="">Elegí un bloque…</option>
+                  {bloques.map((b) => (
+                    <option key={b.id} value={b.id}>{b.nombre}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             {userType === "dirigente" && (
               <label>
                 Candidato al que pertenece
-                <select required value={candidateId} onChange={(event) => setCandidateId(event.target.value)}>
-                  <option value="">Elegí un candidato…</option>
-                  {candidatos.map((c) => (
+                <select required value={candidateId} onChange={(event) => setCandidateId(event.target.value)} disabled={!bloqueId}>
+                  <option value="">{bloqueId ? "Elegí un candidato…" : "Elegí primero un bloque"}</option>
+                  {candidatosDelBloque.map((c) => (
                     <option key={c.id} value={c.id}>{c.nombre} ({c.cargo === "legislador" ? "Legislador" : c.cargo === "concejal" ? "Concejal" : "Otro"})</option>
                   ))}
                 </select>
@@ -394,12 +412,17 @@ function EditUserSheet({ token, user, close, saved }: { token: string; user: Man
   const [allowedModules, setAllowedModules] = useState<string[]>(user.allowed_modules);
   const [candidateId, setCandidateId] = useState<string>(user.candidate_id ? String(user.candidate_id) : "");
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [bloqueId, setBloqueId] = useState<string>(user.bloque_id ? String(user.bloque_id) : "");
+  const [bloques, setBloques] = useState<Bloque[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     listCandidatos(token, true).then(setCandidatos);
+    listBloques(token, true).then(setBloques);
   }, [token]);
+
+  const candidatosDelBloque = candidatos.filter((c) => !bloqueId || c.bloque_id === Number(bloqueId));
 
   function toggleModule(module: string) {
     setAllowedModules((current) => (current.includes(module) ? current.filter((item) => item !== module) : [...current, module]));
@@ -410,7 +433,7 @@ function EditUserSheet({ token, user, close, saved }: { token: string; user: Man
     setSaving(true);
     setMessage("");
     try {
-      await manageUsers(token, { action: "update", user_id: user.user_id, email, password, user_type: userType, allowed_modules: allowedModules, candidate_id: candidateId || null });
+      await manageUsers(token, { action: "update", user_id: user.user_id, email, password, user_type: userType, allowed_modules: allowedModules, candidate_id: candidateId || null, bloque_id: bloqueId || null });
       await saved();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No se pudieron guardar los cambios.");
@@ -449,12 +472,23 @@ function EditUserSheet({ token, user, close, saved }: { token: string; user: Man
             <option value="superadmin">Superadministrador</option>
           </select>
         </label>
+        {BLOQUE_REQUIRED_TYPES.includes(userType) && (
+          <label>
+            Bloque al que pertenece
+            <select required value={bloqueId} onChange={(event) => { setBloqueId(event.target.value); setCandidateId(""); }}>
+              <option value="">Elegí un bloque…</option>
+              {bloques.map((b) => (
+                <option key={b.id} value={b.id}>{b.nombre}</option>
+              ))}
+            </select>
+          </label>
+        )}
         {userType === "dirigente" && (
           <label>
             Candidato al que pertenece
-            <select required value={candidateId} onChange={(event) => setCandidateId(event.target.value)}>
-              <option value="">Elegí un candidato…</option>
-              {candidatos.map((c) => (
+            <select required value={candidateId} onChange={(event) => setCandidateId(event.target.value)} disabled={!bloqueId}>
+              <option value="">{bloqueId ? "Elegí un candidato…" : "Elegí primero un bloque"}</option>
+              {candidatosDelBloque.map((c) => (
                 <option key={c.id} value={c.id}>{c.nombre} ({c.cargo === "legislador" ? "Legislador" : c.cargo === "concejal" ? "Concejal" : "Otro"})</option>
               ))}
             </select>
