@@ -1,6 +1,6 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
-import { Search, UserCheck, Car, ShieldCheck, Users, Flag, Check, X } from "lucide-react";
+import { Search, UserCheck, Car, ShieldCheck, Users, Flag, Check, X, UserCog, MapPin } from "lucide-react";
 import { callFn } from "./api";
 
 type Person = { id: number; dni: string; apellido_nombre: string; mesa: string | null; circuito_nombre: string | null; current_roles: string[] };
@@ -8,20 +8,23 @@ type Assigned = { padron_id: number; roles: string[]; dni: string; apellido_nomb
 type RoleResult = { role: string; status: string; message?: string };
 type Credential = { status: "created" | "existing" | "none"; code: string | null };
 
-const ROLE_OPTIONS = [
-  { key: "movilizador", label: "Movilizador", icon: UserCheck, color: "blue" },
-  { key: "chofer", label: "Chofer", icon: Car, color: "navy" },
-  { key: "fiscal_general", label: "Fiscal general", icon: ShieldCheck, color: "blue" },
-  { key: "fiscal_mesa", label: "Fiscal de mesa", icon: ShieldCheck, color: "green" },
-  { key: "fiscal_suplente", label: "Fiscal suplente", icon: ShieldCheck, color: "navy" },
-  { key: "colaborador", label: "Votante", icon: Users, color: "navy" },
-  { key: "colaborador_comicio", label: "Colaborador de comicio", icon: Flag, color: "green" },
+const ALL_ROLE_OPTIONS = [
+  { key: "dirigente", label: "Dirigente", icon: UserCog, color: "navy", adminOnly: true },
+  { key: "movilizador", label: "Movilizador", icon: UserCheck, color: "blue", adminOnly: false },
+  { key: "chofer", label: "Chofer", icon: Car, color: "navy", adminOnly: false },
+  { key: "fiscal_general", label: "Fiscal general", icon: ShieldCheck, color: "blue", adminOnly: false },
+  { key: "fiscal_mesa", label: "Fiscal de mesa", icon: ShieldCheck, color: "green", adminOnly: false },
+  { key: "fiscal_suplente", label: "Fiscal suplente", icon: ShieldCheck, color: "navy", adminOnly: false },
+  { key: "colaborador", label: "Votante", icon: Users, color: "navy", adminOnly: false },
+  { key: "colaborador_comicio", label: "Colaborador de comicio", icon: Flag, color: "green", adminOnly: true },
+  { key: "coordinador_circuito", label: "Coordinador de circuito", icon: MapPin, color: "blue", adminOnly: true },
 ] as const;
 
-const NEEDS_CODE_ROLES = ["movilizador", "chofer", "fiscal_general", "fiscal_mesa", "fiscal_suplente"];
-const ROLE_LABEL: Record<string, string> = Object.fromEntries(ROLE_OPTIONS.map((r) => [r.key, r.label]));
+const NEEDS_CODE_ROLES = ["dirigente", "movilizador", "chofer", "fiscal_general", "fiscal_mesa", "fiscal_suplente", "coordinador_circuito"];
+const ROLE_LABEL: Record<string, string> = Object.fromEntries(ALL_ROLE_OPTIONS.map((r) => [r.key, r.label]));
 
-export function DirigenteSection({ token }: { token: string }) {
+export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: boolean }) {
+  const ROLE_OPTIONS = ALL_ROLE_OPTIONS.filter((r) => isAdmin || !r.adminOnly);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [people, setPeople] = useState<Person[]>([]);

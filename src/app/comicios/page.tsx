@@ -18,6 +18,7 @@ export default function Comicios() {
   const [token, setToken] = useState("");
   const [person, setPerson] = useState("");
   const [contexto, setContexto] = useState<{ candidato: string | null; bloque: string | null } | null>(null);
+  const [dirigenteAdmin, setDirigenteAdmin] = useState(false);
   const [dni, setDni] = useState("");
   const [code, setCode] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -34,6 +35,7 @@ export default function Comicios() {
           setRoles(d.roles);
           setPerson(d.person?.nombre ?? "");
           setContexto(d.contexto ?? null);
+          setDirigenteAdmin(Boolean(d.dirigente_admin));
         }
         else {
           clearToken(FN);
@@ -51,7 +53,7 @@ export default function Comicios() {
 
   const availableTabs: { key: TabKey; label: string; sub: string }[] = [
     ...(isCandidato ? [{ key: "candidato" as const, label: "Sala de situación", sub: "Candidato" }] : []),
-    ...(isDirigente ? [{ key: "dirigente" as const, label: "Asignar roles", sub: "Dirigente" }] : []),
+    ...(isDirigente ? [{ key: "dirigente" as const, label: "Asignar roles", sub: dirigenteAdmin ? "Dirigente administrador" : "Dirigente" }] : []),
     ...(isMovilizador || isChofer
       ? [{ key: "movilizador" as const, label: "Traslados", sub: isMovilizador && isChofer ? "Movilizadores y choferes" : isChofer ? "Choferes" : "Movilizadores" }]
       : []),
@@ -72,6 +74,7 @@ export default function Comicios() {
       setToken(d.token);
       setPerson(d.person?.nombre ?? "");
       setContexto(d.contexto ?? null);
+      setDirigenteAdmin(Boolean(d.dirigente_admin));
       setRoles(d.roles || []);
       saveToken(FN, d.token);
     } else {
@@ -85,6 +88,7 @@ export default function Comicios() {
     setToken("");
     setRoles([]);
     setContexto(null);
+    setDirigenteAdmin(false);
     setTab(null);
     setDni("");
     setCode("");
@@ -129,7 +133,7 @@ export default function Comicios() {
         </div>
       )}
       {tab === "candidato" && <CandidatoSection token={token} />}
-      {tab === "dirigente" && <DirigenteSection token={token} />}
+      {tab === "dirigente" && <DirigenteSection token={token} isAdmin={dirigenteAdmin} />}
       {tab === "movilizador" && <MovilizadorChoferSection token={token} isMovilizador={isMovilizador} isChofer={isChofer} />}
       {tab === "fiscal" && <FiscalSection token={token} />}
     </ExternalShell>
