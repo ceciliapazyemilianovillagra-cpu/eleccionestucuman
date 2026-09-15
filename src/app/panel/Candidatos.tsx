@@ -116,6 +116,19 @@ export function Candidatos({ token }: { token: string }) {
       setMessage("Elegí a qué bloque pertenece este candidato.");
       return;
     }
+    const original = rows.find((r) => r.id === id);
+    const changingBloque = original && String(original.bloque_id ?? "") !== editBloqueId;
+    if (changingBloque) {
+      const countRes = await fetch(`${SUPABASE_URL}/rest/v1/person_roles?select=id&candidate_id=eq.${id}&active=is.true&limit=1`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, Prefer: "count=exact" },
+      });
+      const range = countRes.headers.get("content-range");
+      const count = range ? Number(range.split("/")[1]) : 0;
+      if (count > 0) {
+        setMessage("Este candidato ya tiene equipo cargado (dirigentes, movilizadores, etc.) — no se puede cambiar de bloque sin dejar datos viejos apuntando al bloque anterior. Creá un candidato nuevo en el bloque correcto en su lugar.");
+        return;
+      }
+    }
     setSaving(true);
     const res = await fetch(`${SUPABASE_URL}/rest/v1/candidatos?id=eq.${id}`, {
       method: "PATCH",
