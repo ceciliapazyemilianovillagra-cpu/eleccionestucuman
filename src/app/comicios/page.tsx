@@ -135,7 +135,7 @@ export default function Comicios() {
       {tab === "candidato" && <CandidatoSection token={token} />}
       {tab === "dirigente" && <DirigenteSection token={token} isAdmin={dirigenteAdmin} />}
       {tab === "movilizador" && <MovilizadorChoferSection token={token} isMovilizador={isMovilizador} isChofer={isChofer} />}
-      {tab === "fiscal" && <FiscalSection token={token} />}
+      {tab === "fiscal" && <FiscalSection token={token} roles={roles} />}
     </ExternalShell>
   );
 }

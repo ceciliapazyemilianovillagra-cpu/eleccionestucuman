@@ -1,10 +1,82 @@
 "use client";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Camera, Check } from "lucide-react";
 import { callFn } from "./api";
 import { useGeolocation } from "./useGeolocation";
 
-export function FiscalSection({ token }: { token: string }) {
+type EscuelaEstado = { fiscal_general_padron_id: number; fiscal_general_nombre: string; presente: boolean; mesas_cerradas: number };
+type EquipoMiembro = { padron_id: number; nombre: string; rol: string; presente: boolean; mesa: string | null; cerrada: boolean };
+type FiscalDashboard =
+  | { role: "coordinador_circuito"; circuito: string | null; escuelas: EscuelaEstado[] }
+  | { role: "fiscal_general"; circuito: string | null; equipo: EquipoMiembro[] }
+  | { role: null };
+
+const ROL_LABEL: Record<string, string> = { fiscal_mesa: "Fiscal de mesa", fiscal_suplente: "Fiscal suplente" };
+
+function FiscalDashboardPanel({ token, roles }: { token: string; roles: string[] }) {
+  const [data, setData] = useState<FiscalDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const d = await callFn("comicios", token, { action: "fiscal_dashboard" });
+    setData(d);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, [token]);
+
+  if (!roles.includes("coordinador_circuito") && !roles.includes("fiscal_general")) return null;
+
+  return (
+    <section className="ext-card">
+      <h2>{data?.role === "coordinador_circuito" ? "Mi circuito" : "Mi escuela"}</h2>
+      <p className="ext-hint">
+        {data?.role === "coordinador_circuito"
+          ? "Estado de los fiscales generales de tu circuito."
+          : "Estado de los fiscales de mesa y suplentes a tu cargo."}
+      </p>
+      <button type="button" className="ext-btn secondary" style={{ marginBottom: 10 }} onClick={load} disabled={loading}>
+        {loading ? "…" : "ACTUALIZAR"}
+      </button>
+      {loading && <p className="ext-note">Cargando…</p>}
+      {!loading && data?.role === "coordinador_circuito" && (
+        <div className="log-list">
+          {!data.escuelas.length && <p className="ext-empty">Todavía no hay fiscales generales cargados en tu circuito.</p>}
+          {data.escuelas.map((e) => (
+            <div key={e.fiscal_general_padron_id} className="log-row" style={{ cursor: "default" }}>
+              <span className={`badge sm ${e.presente ? "ok" : "neutral"}`}>{e.presente ? "Presente" : "Sin marcar"}</span>
+              <div>
+                <b>{e.fiscal_general_nombre}</b>
+                <p>{e.mesas_cerradas} mesa{e.mesas_cerradas === 1 ? "" : "s"} cerrada{e.mesas_cerradas === 1 ? "" : "s"}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {!loading && data?.role === "fiscal_general" && (
+        <div className="log-list">
+          {!data.equipo.length && <p className="ext-empty">Todavía no tenés fiscales de mesa ni suplentes a cargo.</p>}
+          {data.equipo.map((m) => (
+            <div key={m.padron_id} className="log-row" style={{ cursor: "default" }}>
+              <span className={`badge sm ${m.cerrada ? "ok" : m.presente ? "neutral" : "danger"}`}>{m.cerrada ? "Mesa cerrada" : m.presente ? "Presente" : "Sin marcar"}</span>
+              <div>
+                <b>{m.nombre}</b>
+                <p>
+                  {ROL_LABEL[m.rol] ?? m.rol} {m.mesa ? `· Mesa ${m.mesa}` : ""}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function FiscalSection({ token, roles }: { token: string; roles: string[] }) {
   const [mesa, setMesa] = useState("");
   const [presentOk, setPresentOk] = useState(false);
   const [presentMsg, setPresentMsg] = useState("");
@@ -95,6 +167,7 @@ export function FiscalSection({ token }: { token: string }) {
 
   return (
     <>
+      <FiscalDashboardPanel token={token} roles={roles} />
       <section className="ext-card">
         <h2>Mesa</h2>
         <p className="ext-hint">Ingresá el número de mesa donde sos fiscal. Se usa en todas las acciones de abajo.</p>

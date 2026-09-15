@@ -7,6 +7,11 @@ type Person = { id: number; dni: string; apellido_nombre: string; mesa: string |
 type Assigned = { padron_id: number; roles: string[]; dni: string; apellido_nombre: string; has_code: boolean; disputed: boolean | null };
 type RoleResult = { role: string; status: string; message?: string };
 type Credential = { status: "created" | "existing" | "none"; code: string | null };
+type Circuito = { circuito: string; circuito_nombre: string | null };
+type FiscalGeneral = { padron_id: number; apellido_nombre: string; circuito: string | null };
+
+const ROLES_NEED_CIRCUITO = ["fiscal_general", "coordinador_circuito"];
+const ROLES_NEED_SUPERVISOR = ["fiscal_mesa", "fiscal_suplente"];
 
 const ALL_ROLE_OPTIONS = [
   { key: "dirigente", label: "Dirigente", icon: UserCog, color: "navy", adminOnly: true },
@@ -43,6 +48,11 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
   const [listFilter, setListFilter] = useState("");
   const [removingId, setRemovingId] = useState<number | null>(null);
 
+  const [circuitos, setCircuitos] = useState<Circuito[]>([]);
+  const [circuito, setCircuito] = useState("");
+  const [fiscalesGenerales, setFiscalesGenerales] = useState<FiscalGeneral[]>([]);
+  const [supervisorId, setSupervisorId] = useState("");
+
   async function loadAssigned() {
     setListLoading(true);
     const d = await callFn("comicios", token, { action: "dirigente_list_assigned" });
@@ -53,6 +63,18 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
   useEffect(() => {
     loadAssigned();
   }, [token]);
+
+  const needsCircuito = roles.some((r) => ROLES_NEED_CIRCUITO.includes(r));
+  const needsSupervisor = roles.some((r) => ROLES_NEED_SUPERVISOR.includes(r));
+
+  useEffect(() => {
+    if (needsCircuito && !circuitos.length) {
+      callFn("comicios", token, { action: "dirigente_list_circuitos" }).then((d) => setCircuitos(d.circuitos || []));
+    }
+    if (needsSupervisor && !fiscalesGenerales.length) {
+      callFn("comicios", token, { action: "dirigente_list_fiscales_generales" }).then((d) => setFiscalesGenerales(d.fiscales_generales || []));
+    }
+  }, [needsCircuito, needsSupervisor]);
 
   async function search(e: FormEvent) {
     e.preventDefault();
@@ -71,6 +93,8 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
     setSelected(p);
     setRoles(p.current_roles.filter((r) => ROLE_OPTIONS.some((o) => o.key === r)));
     setTelefono("");
+    setCircuito("");
+    setSupervisorId("");
     setResults([]);
     setCredential(null);
   }
@@ -82,7 +106,14 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
   async function assign() {
     if (!selected || !roles.length) return;
     setSaving(true);
-    const d = await callFn("comicios", token, { action: "dirigente_assign_roles", padron_id: selected.id, roles, telefono });
+    const d = await callFn("comicios", token, {
+      action: "dirigente_assign_roles",
+      padron_id: selected.id,
+      roles,
+      telefono,
+      circuito: needsCircuito ? circuito : undefined,
+      supervisor_padron_id: needsSupervisor ? supervisorId : undefined,
+    });
     setSaving(false);
     setResults(d.results || []);
     setCredential(d.credential || null);
@@ -177,6 +208,37 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
                 );
               })}
             </div>
+            {needsCircuito && (
+              <label style={{ display: "block", marginTop: 14 }}>
+                <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6 }}>
+                  ESCUELA / CIRCUITO A CARGO
+                </span>
+                <select required value={circuito} onChange={(e) => setCircuito(e.target.value)}>
+                  <option value="">Elegí un circuito…</option>
+                  {circuitos.map((c) => (
+                    <option key={c.circuito} value={c.circuito}>
+                      {c.circuito} {c.circuito_nombre ? `· ${c.circuito_nombre}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {needsSupervisor && (
+              <label style={{ display: "block", marginTop: 14 }}>
+                <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6 }}>
+                  REPORTA A ESTE FISCAL GENERAL
+                </span>
+                <select required value={supervisorId} onChange={(e) => setSupervisorId(e.target.value)}>
+                  <option value="">Elegí un fiscal general…</option>
+                  {fiscalesGenerales.map((f) => (
+                    <option key={f.padron_id} value={f.padron_id}>
+                      {f.apellido_nombre} {f.circuito ? `· Circuito ${f.circuito}` : ""}
+                    </option>
+                  ))}
+                </select>
+                {!fiscalesGenerales.length && <p className="ext-note">Todavía no cargaste ningún fiscal general.</p>}
+              </label>
+            )}
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <button type="button" className="ext-btn secondary" onClick={() => setSelected(null)}>
                 VOLVER A BUSCAR
