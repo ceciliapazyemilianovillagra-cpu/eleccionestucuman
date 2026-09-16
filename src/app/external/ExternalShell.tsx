@@ -101,11 +101,13 @@ export function ExternalShell({
 
 export function ExternalSplash({ label = "Cargando tu cuenta…" }: { label?: string }) {
   return (
-    <main className="ext ext-splash">
-      <div className="ext-splash-ring" />
-      <span className="ext-splash-badge">
-        <img src="/pulso-electoral-logo.png" alt="" />
-      </span>
+    <main className="ext-splash">
+      <div className="ext-splash-ringwrap">
+        <div className="ext-splash-ring" />
+        <span className="ext-splash-badge">
+          <img src="/pulso-electoral-logo.png" alt="" />
+        </span>
+      </div>
       <p className="ext-splash-label">{label}</p>
     </main>
   );

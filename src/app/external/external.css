@@ -40,22 +40,24 @@
 
 /* ---- Splash de carga ---- */
 .ext-splash {
-  min-height: 100dvh; background: radial-gradient(120% 90% at 50% 20%, var(--navy-light, #1b2f74), var(--navy) 70%);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; position: relative;
+  height: 100dvh; padding: 0; margin: 0;
+  background: radial-gradient(120% 90% at 50% 32%, var(--navy-light, #1b2f74), var(--navy) 75%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
+.ext-splash-ringwrap { position: relative; width: 148px; height: 148px; display: flex; align-items: center; justify-content: center; flex: none; }
 .ext-splash-ring {
-  position: absolute; width: 92px; height: 92px; border-radius: 50%;
-  border: 3px solid #ffffff1f; border-top-color: var(--yellow, #f2c94c);
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 4px solid #ffffff26; border-top-color: var(--yellow, #f2c94c);
   animation: ext-splash-spin 1s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) { .ext-splash-ring { animation-duration: 2.4s; } }
 @keyframes ext-splash-spin { to { transform: rotate(360deg); } }
 .ext-splash-badge {
-  width: 54px; height: 54px; border-radius: 16px; background: #fff; flex: none;
-  display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 26px -10px rgba(0,0,0,.5);
+  width: 96px; height: 96px; border-radius: 26px; background: #fff; flex: none;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 14px 32px -12px rgba(0,0,0,.55);
 }
-.ext-splash-badge img { width: 30px; height: 30px; object-fit: contain; }
-.ext-splash-label { color: #9fd4f5; font-size: 11.5px; font-weight: 700; letter-spacing: .03em; margin: 0; }
+.ext-splash-badge img { width: 58px; height: 58px; object-fit: contain; }
+.ext-splash-label { color: #9fd4f5; font-size: 12.5px; font-weight: 700; letter-spacing: .03em; margin: 26px 0 0; }
 
 /* ---- Top bar ---- */
 .ext-topbar {
