@@ -47,17 +47,11 @@ export function ExternalShell({
               <h1>{title}</h1>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
-            <span className="ext-live" aria-label="Conexión en vivo">
-              <span className="ext-live-dot" />
-              En vivo
-            </span>
-            {onLogout && (
-              <button type="button" className="ext-logout" onClick={onLogout}>
-                Cerrar sesión
-              </button>
-            )}
-          </div>
+          {onLogout && (
+            <button type="button" className="ext-logout" onClick={onLogout} aria-label="Cerrar sesión">
+              ⏻
+            </button>
+          )}
         </div>
         {hasDetail && (
           <div className="ext-detail">
