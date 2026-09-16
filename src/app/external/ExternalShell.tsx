@@ -1,5 +1,5 @@
 "use client";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 
 const ELECTION_DATE = new Date("2027-05-09T00:00:00-03:00");
 
@@ -26,7 +26,8 @@ export function ExternalShell({
   children: ReactNode;
 }) {
   const dias = diasParaLaEleccion();
-  const contextoLabel = contexto?.candidato ? `${contexto.candidato}${contexto.bloque ? ` · ${contexto.bloque}` : ""}` : null;
+  const [expanded, setExpanded] = useState(false);
+  const hasDetail = Boolean(person || contexto?.candidato || contexto?.bloque || dias > 0);
 
   return (
     <main className="ext">
@@ -58,13 +59,46 @@ export function ExternalShell({
             )}
           </div>
         </div>
-        {(person || contextoLabel) && (
-          <div className="ext-person-row">
-            {person && <span className="ext-person-pill">{person}</span>}
-            {contextoLabel && <span className="ext-context-pill">{contextoLabel}</span>}
+        {hasDetail && (
+          <div className="ext-detail">
+            <button
+              type="button"
+              className="ext-detail-toggle"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+            >
+              <span className="ext-detail-toggle-left">
+                <span className="ext-live-dot" />
+                <span className="ext-detail-toggle-name">{person || "Tu cuenta"}</span>
+              </span>
+              <span className={`ext-chevron ${expanded ? "is-open" : ""}`} aria-hidden="true">
+                ⌄
+              </span>
+            </button>
+            {expanded && (
+              <div className="ext-detail-panel">
+                {contexto?.candidato && (
+                  <div className="ext-detail-row">
+                    <span>Candidato</span>
+                    <b>{contexto.candidato}</b>
+                  </div>
+                )}
+                {contexto?.bloque && (
+                  <div className="ext-detail-row">
+                    <span>Bloque</span>
+                    <b>{contexto.bloque}</b>
+                  </div>
+                )}
+                {dias > 0 && (
+                  <div className="ext-detail-row">
+                    <span>Elección</span>
+                    <b>9 de mayo · faltan {dias} días</b>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
-        {dias > 0 && <small className="ext-countdown">Faltan {dias} días para el 9 de mayo</small>}
       </div>
       <div className="ext-body">{children}</div>
     </main>
