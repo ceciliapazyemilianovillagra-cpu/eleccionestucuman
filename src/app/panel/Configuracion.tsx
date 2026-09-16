@@ -354,6 +354,13 @@ function RemindersSection({ token }: { token: string }) {
       </form>
       {loading && <p className="empty">Cargando…</p>}
       {!loading && !rows.length && <p className="empty">No hay números cargados todavía.</p>}
+      {!loading && rows.length > 0 && (
+        <p className="ext-hint" style={{ margin: "0 0 10px" }}>
+          <b>{rows.length}</b> número{rows.length === 1 ? "" : "s"} cargado{rows.length === 1 ? "" : "s"} ·{" "}
+          {rows.filter((r) => r.notify_reminder).length} recibe{rows.filter((r) => r.notify_reminder).length === 1 ? "" : "n"} recordatorio 2hs antes ·{" "}
+          {rows.filter((r) => r.notify_digest).length} recibe{rows.filter((r) => r.notify_digest).length === 1 ? "" : "n"} resumen 7am
+        </p>
+      )}
       <div className="results" style={{ marginBottom: 20 }}>
         {rows.map((r) => (
           <div key={r.id} className="voter-row" style={{ cursor: "default", flexWrap: "wrap" }}>
