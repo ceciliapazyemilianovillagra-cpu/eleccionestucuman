@@ -3,7 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import "../external/external.css";
 import "../panel/panel.css";
 import { callFn, clearToken, loadToken, saveToken } from "../external/api";
-import { ExternalLoginCard, ExternalShell } from "../external/ExternalShell";
+import { ExternalLoginCard, ExternalShell, ExternalSplash } from "../external/ExternalShell";
 import { CandidatoSection } from "../external/CandidatoSection";
 import { FiscalSection } from "../external/FiscalSection";
 import { MovilizadorChoferSection } from "../external/MovilizadorChoferSection";
@@ -25,6 +25,7 @@ export default function Comicios() {
   const [loggingIn, setLoggingIn] = useState(false);
   const [roles, setRoles] = useState<string[]>([]);
   const [tab, setTab] = useState<TabKey | null>(null);
+  const [resolving, setResolving] = useState(() => Boolean(loadToken(FN)));
 
   useEffect(() => {
     const saved = loadToken(FN);
@@ -41,6 +42,7 @@ export default function Comicios() {
           clearToken(FN);
           setToken("");
         }
+        setResolving(false);
       });
     }
   }, []);
@@ -92,6 +94,10 @@ export default function Comicios() {
     setTab(null);
     setDni("");
     setCode("");
+  }
+
+  if (resolving) {
+    return <ExternalSplash />;
   }
 
   if (!token) {
