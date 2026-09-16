@@ -55,6 +55,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
   const [resettingId, setResettingId] = useState<number | null>(null);
   const [resetCode, setResetCode] = useState<{ padron_id: number; code: string } | null>(null);
   const [listFilter, setListFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
 
   const [circuitos, setCircuitos] = useState<Circuito[]>([]);
@@ -149,6 +150,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
   }
 
   const filteredAssigned = assignedList.filter((a) => {
+    if (roleFilter && !a.roles.includes(roleFilter)) return false;
     if (!listFilter.trim()) return true;
     const q = listFilter.toLowerCase();
     return a.dni.includes(q) || a.apellido_nombre.toLowerCase().includes(q);
@@ -296,10 +298,26 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
         {roleCounts.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
             {roleCounts.map((r) => (
-              <span key={r.key} className="badge sm neutral" style={{ background: "#fff8e1", color: "#7a5e00" }}>
+              <button
+                type="button"
+                key={r.key}
+                className="badge sm neutral"
+                onClick={() => setRoleFilter((current) => (current === r.key ? null : r.key))}
+                style={{
+                  background: roleFilter === r.key ? "#7a5e00" : "#fff8e1",
+                  color: roleFilter === r.key ? "#fff8e1" : "#7a5e00",
+                  cursor: "pointer",
+                  border: roleFilter === r.key ? "1px solid #7a5e00" : "1px solid transparent",
+                }}
+              >
                 {r.label}: {r.count}
-              </span>
+              </button>
             ))}
+            {roleFilter && (
+              <button type="button" className="badge sm neutral" style={{ cursor: "pointer" }} onClick={() => setRoleFilter(null)}>
+                Ver todos ×
+              </button>
+            )}
           </div>
         )}
         <button className="ext-btn secondary" style={{ marginBottom: 10 }} onClick={loadAssigned}>
