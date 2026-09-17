@@ -140,7 +140,7 @@
 }
 .ext-iconbtn-x:disabled { opacity: .5; cursor: default; }
 
-.ext-body { width: min(100%, 760px); margin: 0 auto; padding: 18px 20px 10px; display: grid; gap: 18px; }
+.ext-body { width: min(100%, 760px); margin: 0 auto; padding: 18px 20px 10px; display: grid; gap: 18px; overflow-x: hidden; }
 
 /* ---- Cards ---- */
 .ext-card {
@@ -182,14 +182,14 @@
 .ext-voter input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px #1478b81a; }
 
 /* ---- Selector de roles con tarjetas ---- */
-.role-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.role-card { position: relative; border: 1.5px solid #dbe8f1; background: #fff; border-radius: 14px; padding: 12px 6px; text-align: center; cursor: pointer; font: inherit; }
+.role-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.role-card { position: relative; min-width: 0; border: 1.5px solid #dbe8f1; background: #fff; border-radius: 14px; padding: 12px 6px; text-align: center; cursor: pointer; font: inherit; }
 .role-card.selected { border-color: var(--blue); border-width: 2px; background: var(--sky); }
 .role-card-ico { width: 38px; height: 38px; border-radius: 50%; margin: 0 auto 7px; display: flex; align-items: center; justify-content: center; color: #fff; }
 .role-card-ico.navy { background: var(--navy); }
 .role-card-ico.blue { background: var(--blue); }
 .role-card-ico.green { background: var(--green); }
-.role-card b { display: block; font-size: 10px; line-height: 1.25; color: var(--ink); font-weight: 700; }
+.role-card b { display: block; font-size: 10px; line-height: 1.25; color: var(--ink); font-weight: 700; overflow-wrap: break-word; }
 .role-card-check { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; border-radius: 50%; background: var(--blue); color: #fff; display: flex; align-items: center; justify-content: center; }
 @media (max-width: 480px) { .role-cards { grid-template-columns: repeat(2, 1fr); } }
 
@@ -212,8 +212,8 @@
 .ext-voter-row-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
 .ext-voter-row b { font-size: 13.5px; color: var(--ink); display: block; }
 .ext-voter-row .dni-small { color: var(--muted); font-size: 11px; }
-.ext-status-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
-.ext-status-btn { border: 1.5px solid #dbe8f1; background: #fff; border-radius: 10px; padding: 9px 4px; font-size: 11px; font-weight: 800; color: var(--ink); cursor: pointer; }
+.ext-status-btns { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.ext-status-btn { min-width: 0; border: 1.5px solid #dbe8f1; background: #fff; border-radius: 10px; padding: 9px 4px; font-size: 11px; font-weight: 800; color: var(--ink); cursor: pointer; overflow-wrap: break-word; }
 .ext-status-btn.active-buscado { background: #fff3e0; border-color: #f2a23a; color: #8a5407; }
 .ext-status-btn.active-votando { background: #e6f0fc; border-color: var(--blue); color: var(--blue); }
 .ext-status-btn.active-devuelta { background: #e3faf0; border-color: var(--green); color: #0f6b3a; }
