@@ -153,7 +153,7 @@
 
 .ext-search { display: flex; flex-wrap: wrap; gap: 10px; }
 .ext-search input {
-  flex: 1; min-width: 160px; border: 1.5px solid #dbe8f1; border-radius: 12px; padding: 13px 14px; font: inherit; font-size: 15px; background: #fbfdff;
+  flex: 1; min-width: 160px; border: 1.5px solid #dbe8f1; border-radius: 12px; padding: 13px 14px; font: inherit; font-size: 16px; background: #fbfdff;
 }
 .ext-search input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px #1478b81a; }
 .ext-search button, .ext-btn {
@@ -175,6 +175,11 @@
 .ext-voter dl div { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; border-bottom: 1px dashed #dde7ef; padding-bottom: 7px; }
 .ext-voter dt { color: var(--muted); font-weight: 700; }
 .ext-voter dd { margin: 0; text-align: right; font-weight: 600; color: var(--ink); }
+.ext-voter input {
+  width: 100%; border: 1.5px solid #dbe8f1; border-radius: 12px; padding: 13px 14px;
+  font: inherit; font-size: 16px; background: #fbfdff; color: var(--ink);
+}
+.ext-voter input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px #1478b81a; }
 
 /* ---- Selector de roles con tarjetas ---- */
 .role-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -200,7 +205,7 @@
   position: relative; display: flex; align-items: center; background: #f5faff; border: 1px solid #e2eef7;
   border-radius: 12px; padding: 0 12px; margin-bottom: 12px;
 }
-.ext-list-search input { flex: 1; border: 0; outline: 0; background: transparent; padding: 11px 8px; font-size: 14px; }
+.ext-list-search input { flex: 1; border: 0; outline: 0; background: transparent; padding: 11px 8px; font-size: 16px; }
 .ext-list-search span { color: var(--blue); font-size: 16px; }
 .ext-voters-list { display: grid; gap: 10px; }
 .ext-voter-row { background: #fbfdff; border: 1px solid #eef3f8; border-radius: 15px; padding: 13px 14px; }
@@ -217,7 +222,7 @@
 .ext-empty { text-align: center; color: var(--muted); padding: 26px 10px; font-size: 13px; }
 .ext-barcode-box { margin-top: 10px; padding: 12px; background: #f6faff; border: 1px solid #dbe8f1; border-radius: 12px; display: grid; gap: 8px; }
 .ext-barcode-box label { font-size: 11px; font-weight: 700; color: var(--muted); }
-.ext-barcode-box input { border: 1px solid #cfe0eb; border-radius: 10px; padding: 10px 12px; font-size: 14px; letter-spacing: .04em; }
+.ext-barcode-box input { border: 1px solid #cfe0eb; border-radius: 10px; padding: 10px 12px; font-size: 16px; letter-spacing: .04em; }
 .ext-barcode-actions { display: flex; gap: 8px; }
 .ext-barcode-actions .ext-btn { flex: 1; }
 
