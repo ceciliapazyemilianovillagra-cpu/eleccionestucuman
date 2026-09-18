@@ -117,7 +117,7 @@ export default function Candidato() {
             </div>
             <div className="stat-card">
               <b>{data.kpis.votos_nagle.toLocaleString("es-AR")}</b>
-              <p>Votos Nagle</p>
+              <p>Votos del candidato</p>
             </div>
           </div>
 

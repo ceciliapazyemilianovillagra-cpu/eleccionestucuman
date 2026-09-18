@@ -84,7 +84,7 @@ function FiscalesTab({ token }: { token: string }) {
       Fiscal: m.fiscal_nombre ?? "",
       "Presente desde": m.presente_at ? formatDateTime(m.presente_at) : "",
       "Últ. votantes en mesa": m.last_voter_count ?? "",
-      "Votos Nagle": m.nagle_votes ?? "",
+      "Votos del candidato": m.nagle_votes ?? "",
       "Acta subida": m.acta_path ? "Sí" : "No",
       "Cerrada": m.closed_at ? formatDateTime(m.closed_at) : "No",
     }));
@@ -101,7 +101,7 @@ function FiscalesTab({ token }: { token: string }) {
     doc.text("Comicios · Fiscales", 14, 14);
     autoTable(doc, {
       startY: 20,
-      head: [["Mesa", "Fiscal", "Votantes", "Nagle", "Acta", "Cerrada"]],
+      head: [["Mesa", "Fiscal", "Votantes", "Votos", "Acta", "Cerrada"]],
       body: mesas.map((m) => [m.mesa, m.fiscal_nombre ?? "", m.last_voter_count ?? "", m.nagle_votes ?? "", m.acta_path ? "Sí" : "No", m.closed_at ? formatDateTime(m.closed_at) : "No"]),
       styles: { fontSize: 8 },
     });
@@ -140,7 +140,7 @@ function FiscalesTab({ token }: { token: string }) {
           </div>
           <div className="stat-card" style={{ "--stat-accent": "var(--navy)" } as React.CSSProperties}>
             <span className="stat-seal"><b>{stats.votos_nagle.toLocaleString("es-AR")}</b></span>
-            <p>Votos Nagle</p>
+            <p>Votos del candidato</p>
           </div>
         </div>
       )}
@@ -210,7 +210,7 @@ function FiscalesTab({ token }: { token: string }) {
               </p>
               <p>
                 {m.closed_at
-                  ? `Cerrada ${formatDateTime(m.closed_at)} · Nagle: ${m.nagle_votes} · Acta ${m.acta_path ? "subida" : "sin subir"}`
+                  ? `Cerrada ${formatDateTime(m.closed_at)} · Votos: ${m.nagle_votes} · Acta ${m.acta_path ? "subida" : "sin subir"}`
                   : "Mesa aún no cerrada"}
               </p>
             </div>

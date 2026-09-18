@@ -178,7 +178,7 @@ export default function Fiscales() {
 
       <section className="ext-card">
         <h2>Fin de comicio</h2>
-        <p className="ext-hint">Al cierre de la votación, cargá los votos totales de Nagle y subí la foto del acta.</p>
+        <p className="ext-hint">Al cierre de la votación, cargá los votos totales de tu candidato y subí la foto del acta.</p>
         <form onSubmit={closeMesa}>
           <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", margin: "0 0 6px" }}>VOTOS NAGLE</label>
           <input className="ext-mesa-input" style={{ marginBottom: 14 }} inputMode="numeric" placeholder="Total de votos" value={nagleVotes} onChange={(e) => setNagleVotes(e.target.value)} required disabled={closed} />

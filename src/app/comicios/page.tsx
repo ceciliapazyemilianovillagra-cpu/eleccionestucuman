@@ -26,12 +26,18 @@ export default function Comicios() {
   const [roles, setRoles] = useState<string[]>([]);
   const [tab, setTab] = useState<TabKey | null>(null);
   const [resolving, setResolving] = useState(() => Boolean(loadToken(FN)));
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     const saved = loadToken(FN);
     if (saved) {
       setToken(saved);
       callFn(FN, saved, { action: "me" }).then((d) => {
+        if (d.networkError) {
+          setLoadFailed(true);
+          setResolving(false);
+          return;
+        }
         if (Array.isArray(d.roles)) {
           setRoles(d.roles);
           setPerson(d.person?.nombre ?? "");
@@ -100,6 +106,16 @@ export default function Comicios() {
     return <ExternalSplash />;
   }
 
+  if (loadFailed) {
+    return (
+      <ExternalLoginCard>
+        <h1>Sin conexión</h1>
+        <p>No pudimos cargar tu cuenta. Revisá tu señal e intentá de nuevo; tu sesión sigue guardada.</p>
+        <button type="button" onClick={() => window.location.reload()}>REINTENTAR</button>
+      </ExternalLoginCard>
+    );
+  }
+
   if (!token) {
     return (
       <ExternalLoginCard>
@@ -138,10 +154,10 @@ export default function Comicios() {
           ))}
         </div>
       )}
-      {tab === "candidato" && <CandidatoSection token={token} />}
+      {tab === "candidato" && <CandidatoSection token={token} candidatoNombre={contexto?.candidato} />}
       {tab === "dirigente" && <DirigenteSection token={token} isAdmin={dirigenteAdmin} />}
       {tab === "movilizador" && <MovilizadorChoferSection token={token} isMovilizador={isMovilizador} isChofer={isChofer} />}
-      {tab === "fiscal" && <FiscalSection token={token} roles={roles} />}
+      {tab === "fiscal" && <FiscalSection token={token} roles={roles} candidatoNombre={contexto?.candidato} />}
     </ExternalShell>
   );
 }

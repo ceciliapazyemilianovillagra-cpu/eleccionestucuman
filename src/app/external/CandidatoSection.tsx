@@ -11,7 +11,7 @@ type Dashboard = {
   alertas: { voter_nombre: string; actor_nombre: string; owner_nombre: string }[];
 };
 
-export function CandidatoSection({ token }: { token: string }) {
+export function CandidatoSection({ token, candidatoNombre }: { token: string; candidatoNombre?: string | null }) {
   const [data, setData] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -60,7 +60,7 @@ export function CandidatoSection({ token }: { token: string }) {
             </div>
             <div className="stat-card">
               <b>{data.kpis.votos_nagle.toLocaleString("es-AR")}</b>
-              <p>Votos Nagle</p>
+              <p>{candidatoNombre ? `Votos ${candidatoNombre}` : "Votos del candidato"}</p>
             </div>
           </div>
 

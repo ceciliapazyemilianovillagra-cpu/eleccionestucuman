@@ -76,7 +76,7 @@ function FiscalDashboardPanel({ token, roles }: { token: string; roles: string[]
   );
 }
 
-export function FiscalSection({ token, roles }: { token: string; roles: string[] }) {
+export function FiscalSection({ token, roles, candidatoNombre }: { token: string; roles: string[]; candidatoNombre?: string | null }) {
   const [mesa, setMesa] = useState("");
   const [presentOk, setPresentOk] = useState(false);
   const [presentMsg, setPresentMsg] = useState("");
@@ -205,9 +205,9 @@ export function FiscalSection({ token, roles }: { token: string; roles: string[]
 
       <section className="ext-card">
         <h2>Fin de comicio</h2>
-        <p className="ext-hint">Al cierre de la votación, cargá los votos totales de Nagle y subí la foto del acta.</p>
+        <p className="ext-hint">Al cierre de la votación, cargá los votos totales de {candidatoNombre || "tu candidato"} y subí la foto del acta.</p>
         <form onSubmit={closeMesa}>
-          <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", margin: "0 0 6px" }}>VOTOS NAGLE</label>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", margin: "0 0 6px" }}>{candidatoNombre ? `VOTOS ${candidatoNombre.toUpperCase()}` : "VOTOS DEL CANDIDATO"}</label>
           <input className="ext-mesa-input" style={{ marginBottom: 14 }} inputMode="numeric" placeholder="Total de votos" value={nagleVotes} onChange={(e) => setNagleVotes(e.target.value)} required disabled={closed} />
           <label className={`ext-file-btn ${actaFile ? "has-file" : ""}`}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>

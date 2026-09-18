@@ -3,16 +3,20 @@ const ANON_KEY =
 const BASE = "https://dcdtbinqlsvsvmrymyjr.supabase.co/functions/v1";
 
 export async function callFn(fn: "movilizadores" | "choferes" | "fiscales" | "candidato" | "comicios", token: string, body: Record<string, unknown>) {
-  const r = await fetch(`${BASE}/${fn}`, {
-    method: "POST",
-    headers: {
-      apikey: ANON_KEY,
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  return r.json();
+  try {
+    const r = await fetch(`${BASE}/${fn}`, {
+      method: "POST",
+      headers: {
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    return await r.json();
+  } catch {
+    return { error: "Sin conexión o respuesta inválida. Revisá tu señal e intentá de nuevo.", networkError: true };
+  }
 }
 
 const SESSION_KEY_PREFIX = "et_ext_token_";
