@@ -3,6 +3,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Camera, Check } from "lucide-react";
 import { callFn } from "./api";
 import { useGeolocation } from "./useGeolocation";
+import { describeItem, useOfflineQueue } from "./offlineQueue";
 
 type EscuelaEstado = { fiscal_general_padron_id: number; fiscal_general_nombre: string; presente: boolean; mesas_cerradas: number };
 type EquipoMiembro = { padron_id: number; nombre: string; rol: string; presente: boolean; mesa: string | null; cerrada: boolean };
@@ -76,7 +77,8 @@ function FiscalDashboardPanel({ token, roles }: { token: string; roles: string[]
   );
 }
 
-export function FiscalSection({ token, roles, candidatoNombre }: { token: string; roles: string[]; candidatoNombre?: string | null }) {
+export function FiscalSection({ token, roles, candidatoNombre, ownerKey }: { token: string; roles: string[]; candidatoNombre?: string | null; ownerKey: string }) {
+  const { items: pending, flushing, submit, flush, discard } = useOfflineQueue(token, ownerKey);
   const [mesa, setMesa] = useState("");
   const [presentOk, setPresentOk] = useState(false);
   const [presentMsg, setPresentMsg] = useState("");
@@ -98,12 +100,15 @@ export function FiscalSection({ token, roles, candidatoNombre }: { token: string
       return;
     }
     const point = await getLocation();
-    const d = await callFn("comicios", token, { action: "mark_present", mesa, lat: point?.lat, lng: point?.lng, accuracy: point?.accuracy });
-    if (d.success) {
+    const r = await submit("mark_present", { mesa, lat: point?.lat, lng: point?.lng, accuracy: point?.accuracy });
+    if (r.status === "sent") {
       setPresentOk(true);
       setPresentMsg("Presencia registrada con ubicación y hora.");
+    } else if (r.status === "queued") {
+      setPresentOk(true);
+      setPresentMsg("Sin señal: tu presencia quedó guardada en el teléfono y se envía sola cuando vuelva la conexión.");
     } else {
-      setPresentMsg(d.error || "No se pudo registrar.");
+      setPresentMsg(r.error || "No se pudo registrar.");
     }
   }
 
@@ -113,27 +118,19 @@ export function FiscalSection({ token, roles, candidatoNombre }: { token: string
       setTurnoutMsg("Ingresá el número de mesa arriba.");
       return;
     }
-    const d = await callFn("comicios", token, { action: "report_turnout", mesa, voter_count: Number(voterCount) });
-    if (d.success) {
-      setTurnoutMsg("");
-      setTurnoutHistory((prev) => [`${voterCount} votantes — ${new Date().toLocaleTimeString()}`, ...prev].slice(0, 8));
-      setVoterCount("");
-    } else {
-      setTurnoutMsg(d.error || "No se pudo enviar.");
+    const r = await submit("report_turnout", { mesa, voter_count: Number(voterCount) });
+    if (r.status === "error") {
+      setTurnoutMsg(r.error || "No se pudo enviar.");
+      return;
     }
+    setTurnoutMsg("");
+    const suffix = r.status === "queued" ? " (pendiente de envío)" : "";
+    setTurnoutHistory((prev) => [`${voterCount} votantes — ${new Date().toLocaleTimeString()}${suffix}`, ...prev].slice(0, 8));
+    setVoterCount("");
   }
 
   function onFileChange(e: ChangeEvent<HTMLInputElement>) {
     setActaFile(e.target.files?.[0] ?? null);
-  }
-
-  function fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
   }
 
   async function closeMesa(e: FormEvent) {
@@ -148,25 +145,45 @@ export function FiscalSection({ token, roles, candidatoNombre }: { token: string
       return;
     }
     setClosing(true);
-    const base64 = await fileToBase64(actaFile);
-    const upload = await callFn("comicios", token, { action: "upload_acta", mesa, file_base64: base64, content_type: actaFile.type });
-    if (!upload.acta_path) {
-      setClosing(false);
-      setCloseMsg(upload.error || "No se pudo subir la foto.");
-      return;
-    }
-    const d = await callFn("comicios", token, { action: "close_mesa", mesa, nagle_votes: Number(nagleVotes), acta_path: upload.acta_path });
+    const r = await submit("close_mesa", { mesa, nagle_votes: Number(nagleVotes) }, actaFile);
     setClosing(false);
-    if (d.success) {
+    if (r.status === "sent") {
       setClosed(true);
       setCloseMsg("Cierre de mesa enviado correctamente.");
+    } else if (r.status === "queued") {
+      setClosed(true);
+      setCloseMsg("Sin señal: el cierre y la foto del acta quedaron guardados en el teléfono y se envían solos cuando vuelva la conexión. No cierres la app hasta que desaparezca el aviso de pendientes.");
     } else {
-      setCloseMsg(d.error || "No se pudo cerrar la mesa.");
+      setCloseMsg(r.error || "No se pudo cerrar la mesa.");
     }
   }
 
   return (
     <>
+      {pending.length > 0 && (
+        <section className="ext-card" style={{ background: "#fff8e1", borderColor: "#f2c94c" }}>
+          <h2>Envíos pendientes ({pending.length})</h2>
+          <p className="ext-hint">Estos datos están guardados en tu teléfono y se envían solos cuando hay señal.</p>
+          <div className="log-list">
+            {pending.map((item) => (
+              <div key={item.id} className="ext-voter-row-top" style={{ marginBottom: 6 }}>
+                <div>
+                  <b>{describeItem(item)}</b>
+                  {item.lastError && <span className="dni-small" style={{ color: "#a3231e" }}>{item.lastError}</span>}
+                </div>
+                {item.lastError && (
+                  <button type="button" className="ext-btn secondary" style={{ padding: "6px 10px" }} onClick={() => discard(item.id)}>
+                    DESCARTAR
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <button type="button" className="ext-btn full" style={{ marginTop: 8 }} disabled={flushing} onClick={() => flush(true)}>
+            {flushing ? "ENVIANDO…" : "REINTENTAR AHORA"}
+          </button>
+        </section>
+      )}
       <FiscalDashboardPanel token={token} roles={roles} />
       <section className="ext-card">
         <h2>Mesa</h2>
