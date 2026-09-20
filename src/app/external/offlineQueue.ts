@@ -102,6 +102,34 @@ async function processItem(token: string, item: QueueItem): Promise<Result> {
   return { error: d.error || "No se pudo enviar." };
 }
 
+// Las fotos del celular pesan 4-8 MB; con mala senal eso es lo primero que falla. Se reduce a un maximo de
+// 2000 px de lado en JPEG (unos 400-800 KB), suficiente para leer el acta. Si algo falla se manda la original.
+async function compressImage(file: File): Promise<Blob> {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+    if (scale === 1 && file.size < 900_000) {
+      bmp.close();
+      return file;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bmp.width * scale);
+    canvas.height = Math.round(bmp.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bmp.close();
+      return file;
+    }
+    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+    return blob && blob.size < file.size ? blob : file;
+  } catch {
+    return file;
+  }
+}
+
 function newId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -172,14 +200,15 @@ export function useOfflineQueue(token: string, ownerKey: string) {
   const submit = useCallback(
     async (kind: QueueKind, payload: Record<string, unknown>, file?: File | null) => {
       const ts = new Date().toISOString();
+      const prepared = file ? await compressImage(file) : undefined;
       const item: QueueItem = {
         id: newId(),
         owner: ownerKey,
         kind,
         payload: { ...payload, client_ts: ts },
         ts,
-        file: file ?? undefined,
-        contentType: file?.type,
+        file: prepared,
+        contentType: prepared?.type || file?.type,
       };
       const result = await processItem(token, item);
       if ("ok" in result) return { status: "sent" as const };
