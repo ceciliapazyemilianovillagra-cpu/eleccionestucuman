@@ -131,7 +131,11 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
           </div>
           <div>
             <dt>Circuito</dt>
-            <dd>{voter.circuito_nombre || voter.circuito}</dd>
+            <dd>{voter.circuito_codigo ? `${voter.circuito_codigo}${voter.circuito_nombre ? ` · ${voter.circuito_nombre}` : ""}` : voter.circuito_nombre || voter.circuito}</dd>
+          </div>
+          <div>
+            <dt>Escuela</dt>
+            <dd>{voter.escuela_nombre ? `${voter.escuela_nombre}${voter.escuela_direccion ? ` · ${voter.escuela_direccion}` : ""}` : "Sin dato"}</dd>
           </div>
           <div>
             <dt>Mesa / Orden</dt>

@@ -11,15 +11,16 @@ type Person = {
   circuito_nombre: string | null;
   current_roles: string[];
   current_circuito: string | null;
+  current_escuela_id: number | null;
   current_supervisor_padron_id: number | null;
 };
 type Assigned = { padron_id: number; roles: string[]; dni: string; apellido_nombre: string; has_code: boolean; disputed: boolean | null };
 type RoleResult = { role: string; status: string; message?: string };
 type Credential = { status: "created" | "existing" | "none"; code: string | null };
 type Circuito = { circuito: string; circuito_nombre: string | null };
-type FiscalGeneral = { padron_id: number; apellido_nombre: string; circuito: string | null };
+type FiscalGeneral = { padron_id: number; apellido_nombre: string; circuito: string | null; escuela_nombre: string | null; circuito_codigo: string | null };
+type Escuela = { id: number; circuito: string; nombre: string; direccion: string | null; mesa_desde: number; mesa_hasta: number; cant_mesas: number };
 
-const ROLES_NEED_CIRCUITO = ["fiscal_general", "coordinador_circuito"];
 const ROLES_NEED_SUPERVISOR = ["fiscal_mesa", "fiscal_suplente"];
 
 const ALL_ROLE_OPTIONS = [
@@ -60,6 +61,8 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
 
   const [circuitos, setCircuitos] = useState<Circuito[]>([]);
   const [circuito, setCircuito] = useState("");
+  const [escuelas, setEscuelas] = useState<Escuela[]>([]);
+  const [escuelaId, setEscuelaId] = useState("");
   const [fiscalesGenerales, setFiscalesGenerales] = useState<FiscalGeneral[]>([]);
   const [supervisorId, setSupervisorId] = useState("");
 
@@ -74,17 +77,28 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
     loadAssigned();
   }, [token]);
 
-  const needsCircuito = roles.some((r) => ROLES_NEED_CIRCUITO.includes(r));
+  const needsCircuito = roles.includes("coordinador_circuito");
+  const needsEscuela = roles.includes("fiscal_general");
   const needsSupervisor = roles.some((r) => ROLES_NEED_SUPERVISOR.includes(r));
+
+  const escuelasPorCircuito = escuelas.reduce<{ circuito: string; items: Escuela[] }[]>((groups, e) => {
+    const last = groups[groups.length - 1];
+    if (last && last.circuito === e.circuito) last.items.push(e);
+    else groups.push({ circuito: e.circuito, items: [e] });
+    return groups;
+  }, []);
 
   useEffect(() => {
     if (needsCircuito && !circuitos.length) {
       callFn("comicios", token, { action: "dirigente_list_circuitos" }).then((d) => setCircuitos(d.circuitos || []));
     }
+    if (needsEscuela && !escuelas.length) {
+      callFn("comicios", token, { action: "dirigente_list_escuelas" }).then((d) => setEscuelas(d.escuelas || []));
+    }
     if (needsSupervisor && !fiscalesGenerales.length) {
       callFn("comicios", token, { action: "dirigente_list_fiscales_generales" }).then((d) => setFiscalesGenerales(d.fiscales_generales || []));
     }
-  }, [needsCircuito, needsSupervisor]);
+  }, [needsCircuito, needsEscuela, needsSupervisor]);
 
   async function search(e: FormEvent) {
     e.preventDefault();
@@ -103,7 +117,8 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
     setSelected(p);
     setRoles(p.current_roles.filter((r) => ROLE_OPTIONS.some((o) => o.key === r)));
     setTelefono("");
-    setCircuito(p.current_circuito ?? "");
+    setCircuito(p.current_circuito && p.current_circuito !== "PENDIENTE" ? p.current_circuito : "");
+    setEscuelaId(p.current_escuela_id ? String(p.current_escuela_id) : p.current_roles.includes("fiscal_general") && p.current_circuito === "PENDIENTE" ? "PENDIENTE" : "");
     setSupervisorId(p.current_supervisor_padron_id ? String(p.current_supervisor_padron_id) : "");
     setResults([]);
     setCredential(null);
@@ -122,6 +137,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
       roles,
       telefono,
       circuito: needsCircuito ? circuito : undefined,
+      escuela_id: needsEscuela ? escuelaId : undefined,
       supervisor_padron_id: needsSupervisor ? supervisorId : undefined,
     });
     setSaving(false);
@@ -219,14 +235,34 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
                 );
               })}
             </div>
+            {needsEscuela && (
+              <label style={{ display: "block", marginTop: 14 }}>
+                <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6 }}>
+                  ESCUELA A CARGO
+                </span>
+                <select required value={escuelaId} onChange={(e) => setEscuelaId(e.target.value)}>
+                  <option value="">Elegí una escuela…</option>
+                  <option value="PENDIENTE">Pendiente de asignación</option>
+                  {escuelasPorCircuito.map((g) => (
+                    <optgroup key={g.circuito} label={`Circuito ${g.circuito}`}>
+                      {g.items.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.nombre} · mesas {e.mesa_desde}-{e.mesa_hasta}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                {!escuelas.length && <p className="ext-note">Cargando escuelas…</p>}
+              </label>
+            )}
             {needsCircuito && (
               <label style={{ display: "block", marginTop: 14 }}>
                 <span style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6 }}>
-                  ESCUELA / CIRCUITO A CARGO
+                  CIRCUITO QUE COORDINA
                 </span>
                 <select required value={circuito} onChange={(e) => setCircuito(e.target.value)}>
                   <option value="">Elegí un circuito…</option>
-                  {!roles.includes("coordinador_circuito") && <option value="PENDIENTE">Pendiente de asignación</option>}
                   {circuitos.map((c) => (
                     <option key={c.circuito} value={c.circuito}>
                       {c.circuito} {c.circuito_nombre ? `· ${c.circuito_nombre}` : ""}
@@ -244,7 +280,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
                   <option value="">Pendiente de asignación (sin fiscal general todavía)</option>
                   {fiscalesGenerales.map((f) => (
                     <option key={f.padron_id} value={f.padron_id}>
-                      {f.apellido_nombre} {f.circuito ? `· Circuito ${f.circuito}` : ""}
+                      {f.apellido_nombre} {f.escuela_nombre ? `· ${f.escuela_nombre}` : f.circuito && f.circuito !== "PENDIENTE" ? `· Circuito ${f.circuito}` : ""}
                     </option>
                   ))}
                 </select>

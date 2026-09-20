@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, CircleMarker, useMapEvents } from "react-leaflet";
 import type { Feature } from "geojson";
 import type { Layer, PathOptions } from "leaflet";
 import L from "leaflet";
@@ -91,6 +91,7 @@ const CIRCUITO_COLORS: Record<string, string> = {
 type FiscalLoc = { mesa: string; fiscal_nombre: string; latitude: number; longitude: number; marked_at: string };
 type TransportLoc = { voter_id: number; voter_nombre: string; mobilizer_nombre: string | null; status: string; latitude: number; longitude: number; marked_at: string };
 type MapPoint = { id: number; type: "bunker" | "punto_caliente" | "otro" | "escuela"; label: string; description: string | null; latitude: number; longitude: number };
+type EscuelaGeo = { id: number; circuito: string; nombre: string; direccion: string | null; mesa_desde: number; mesa_hasta: number; cant_mesas: number; electores: number | null; lat: number; lng: number; geo_nota: string | null };
 type Cobertura = { circuito: string; circuito_nombre: string | null; total_padron: number; movilizadores: number; fiscales: number; colaboradores: number; cobertura_pct: number | null };
 
 const FILTERS = [
@@ -122,14 +123,35 @@ export default function MapView({ token }: { token: string }) {
   const [circuitosGeo, setCircuitosGeo] = useState<GeoJSON.FeatureCollection | null>(null);
   const [cobertura, setCobertura] = useState<Record<string, Cobertura>>({});
   const [showCircuitos, setShowCircuitos] = useState(false);
+  const [showEscuelas, setShowEscuelas] = useState(true);
+  const [escuelasGeo, setEscuelasGeo] = useState<EscuelaGeo[]>([]);
+  const [estadoEscuela, setEstadoEscuela] = useState<Record<number, { cerradas: number; presentes: number }>>({});
+
+  useEffect(() => {
+    fetch(`${SUPABASE_URL}/rest/v1/escuelas?select=id,circuito,nombre,direccion,mesa_desde,mesa_hasta,cant_mesas,electores,lat,lng,geo_nota&lat=not.is.null&order=id`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((rows) => setEscuelasGeo(Array.isArray(rows) ? rows : []))
+      .catch(() => setEscuelasGeo([]));
+  }, [token]);
 
   async function load() {
     setLoading(true);
-    const [f, t, headers] = await Promise.all([
+    const [f, t, m, headers] = await Promise.all([
       rpc(token, "list_fiscal_locations").catch(() => []),
       rpc(token, "list_transport_locations").catch(() => []),
+      rpc(token, "list_comicios_mesas").catch(() => []),
       Promise.resolve({ apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` }),
     ]);
+    const estado: Record<number, { cerradas: number; presentes: number }> = {};
+    for (const row of (m || []) as { escuela_id: number | null; closed_at: string | null; presente_at: string | null }[]) {
+      if (row.escuela_id == null) continue;
+      const e = (estado[row.escuela_id] ??= { cerradas: 0, presentes: 0 });
+      if (row.closed_at) e.cerradas++;
+      if (row.presente_at) e.presentes++;
+    }
+    setEstadoEscuela(estado);
     setFiscales(f || []);
     setTransportes(t || []);
     const pr = await fetch(`${SUPABASE_URL}/rest/v1/map_points?select=*`, { headers }).then((r) => r.json());
@@ -159,7 +181,7 @@ export default function MapView({ token }: { token: string }) {
       .catch(() => setCircuitosGeo(null));
   }, [showCircuitos, circuitosGeo]);
 
-  useRealtime(["map_points", "fiscal_attendance", "voter_transport_status"], token, load);
+  useRealtime(["map_points", "fiscal_attendance", "fiscal_closures", "voter_transport_status"], token, load);
 
   function toggle(key: FilterKey) {
     setActive((prev) => {
@@ -231,6 +253,13 @@ export default function MapView({ token }: { token: string }) {
         ))}
         <button
           className="map-filter-btn"
+          style={{ borderColor: "#5b3fa0", color: showEscuelas ? "#fff" : "#5b3fa0", background: showEscuelas ? "#5b3fa0" : "#fff" }}
+          onClick={() => setShowEscuelas((v) => !v)}
+        >
+          Escuelas oficiales ({escuelasGeo.length})
+        </button>
+        <button
+          className="map-filter-btn"
           style={{ borderColor: "#17285f", color: showCircuitos ? "#fff" : "#17285f", background: showCircuitos ? "#17285f" : "#fff" }}
           onClick={() => setShowCircuitos((v) => !v)}
         >
@@ -284,6 +313,40 @@ export default function MapView({ token }: { token: string }) {
               }}
             />
           )}
+          {showEscuelas &&
+            escuelasGeo.map((e) => {
+              const st = estadoEscuela[e.id];
+              const todasCerradas = st && st.cerradas >= e.cant_mesas;
+              const color = todasCerradas ? "#147a4c" : st && (st.cerradas || st.presentes) ? "#f2a23a" : "#5b3fa0";
+              return (
+                <CircleMarker key={`e-${e.id}`} center={[e.lat, e.lng]} radius={7} pathOptions={{ color: "#fff", weight: 2, fillColor: color, fillOpacity: 0.95 }}>
+                  <Popup>
+                    <b>{e.nombre}</b>
+                    <br />
+                    {e.direccion ?? ""}
+                    <br />
+                    Circuito {e.circuito} · mesas {e.mesa_desde}-{e.mesa_hasta} ({e.cant_mesas})
+                    {e.electores ? ` · ${e.electores.toLocaleString("es-AR")} electores` : ""}
+                    {st && (
+                      <>
+                        <br />
+                        {st.cerradas}/{e.cant_mesas} mesas cerradas · {st.presentes} con fiscal presente
+                      </>
+                    )}
+                    {e.geo_nota && /revisar/i.test(e.geo_nota) && (
+                      <>
+                        <br />
+                        <span style={{ fontSize: 11, color: "#a3231e" }}>Ubicación a revisar: {e.geo_nota}</span>
+                      </>
+                    )}
+                    <br />
+                    <a href={`https://www.google.com/maps?q=${e.lat},${e.lng}`} target="_blank" rel="noreferrer">
+                      Abrir en Google Maps
+                    </a>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
           {active.has("fiscal") &&
             fiscales.map((f) => (
               <Marker key={`f-${f.mesa}`} position={[f.latitude, f.longitude]} icon={ICONS.fiscal}>

@@ -6,13 +6,36 @@ import { useGeolocation } from "./useGeolocation";
 import { describeItem, useOfflineQueue } from "./offlineQueue";
 
 type EscuelaEstado = { fiscal_general_padron_id: number; fiscal_general_nombre: string; presente: boolean; mesas_cerradas: number };
+type EscuelaCircuito = {
+  escuela_id: number;
+  nombre: string;
+  direccion: string | null;
+  circuito_codigo: string;
+  cant_mesas: number;
+  mesas_cerradas: number;
+  mesas_presentes: number;
+  fiscal_general_padron_id: number | null;
+  fiscal_general_nombre: string | null;
+  presente: boolean;
+};
 type EquipoMiembro = { padron_id: number; nombre: string; rol: string; presente: boolean; mesa: string | null; cerrada: boolean };
+type MesaEstado = { mesa: number; presente: boolean; votantes: number | null; cerrada: boolean; votos: number | null };
+type MiEscuela = { id: number; circuito: string; nombre: string; direccion: string | null; mesa_desde: number; mesa_hasta: number; cant_mesas: number };
 type FiscalDashboard =
-  | { role: "coordinador_circuito"; circuito: string | null; escuelas: EscuelaEstado[] }
-  | { role: "fiscal_general"; circuito: string | null; equipo: EquipoMiembro[] }
+  | { role: "coordinador_circuito"; circuito: string | null; escuelas: EscuelaCircuito[]; sin_escuela: EscuelaEstado[] }
+  | { role: "fiscal_general"; circuito: string | null; escuela: MiEscuela | null; mesas: MesaEstado[]; equipo: EquipoMiembro[] }
   | { role: null };
 
 const ROL_LABEL: Record<string, string> = { fiscal_mesa: "Fiscal de mesa", fiscal_suplente: "Fiscal suplente" };
+
+function Progreso({ hechas, total }: { hechas: number; total: number }) {
+  const pct = total ? Math.round((hechas / total) * 100) : 0;
+  return (
+    <div style={{ height: 6, borderRadius: 99, background: "#e6eef5", overflow: "hidden", marginTop: 6 }} aria-hidden="true">
+      <div style={{ width: `${pct}%`, height: "100%", background: "var(--green)" }} />
+    </div>
+  );
+}
 
 function FiscalDashboardPanel({ token, roles }: { token: string; roles: string[] }) {
   const [data, setData] = useState<FiscalDashboard | null>(null);
@@ -31,47 +54,123 @@ function FiscalDashboardPanel({ token, roles }: { token: string; roles: string[]
 
   if (!roles.includes("coordinador_circuito") && !roles.includes("fiscal_general")) return null;
 
+  const cerradasCircuito = data?.role === "coordinador_circuito" ? data.escuelas.reduce((n, e) => n + e.mesas_cerradas, 0) : 0;
+  const totalCircuito = data?.role === "coordinador_circuito" ? data.escuelas.reduce((n, e) => n + e.cant_mesas, 0) : 0;
+  const sinFiscal = data?.role === "coordinador_circuito" ? data.escuelas.filter((e) => e.fiscal_general_padron_id == null).length : 0;
+
   return (
     <section className="ext-card">
-      <h2>{data?.role === "coordinador_circuito" ? "Mi circuito" : "Mi escuela"}</h2>
+      <h2>{data?.role === "coordinador_circuito" ? `Mi circuito${data.circuito ? ` ${data.circuito}` : ""}` : "Mi escuela"}</h2>
       <p className="ext-hint">
         {data?.role === "coordinador_circuito"
-          ? "Estado de los fiscales generales de tu circuito."
-          : "Estado de los fiscales de mesa y suplentes a tu cargo."}
+          ? "Todas las escuelas de tu circuito y cuántas mesas van cerradas."
+          : "Tu escuela, el estado de cada una de sus mesas y tu equipo."}
       </p>
       <button type="button" className="ext-btn secondary" style={{ marginBottom: 10 }} onClick={load} disabled={loading}>
         {loading ? "…" : "ACTUALIZAR"}
       </button>
       {loading && <p className="ext-note">Cargando…</p>}
+
       {!loading && data?.role === "coordinador_circuito" && (
-        <div className="log-list">
-          {!data.escuelas.length && <p className="ext-empty">Todavía no hay fiscales generales cargados en tu circuito.</p>}
-          {data.escuelas.map((e) => (
-            <div key={e.fiscal_general_padron_id} className="log-row" style={{ cursor: "default" }}>
-              <span className={`badge sm ${e.presente ? "ok" : "neutral"}`}>{e.presente ? "Presente" : "Sin marcar"}</span>
-              <div>
-                <b>{e.fiscal_general_nombre}</b>
-                <p>{e.mesas_cerradas} mesa{e.mesas_cerradas === 1 ? "" : "s"} cerrada{e.mesas_cerradas === 1 ? "" : "s"}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {!loading && data?.role === "fiscal_general" && (
-        <div className="log-list">
-          {!data.equipo.length && <p className="ext-empty">Todavía no tenés fiscales de mesa ni suplentes a cargo.</p>}
-          {data.equipo.map((m) => (
-            <div key={m.padron_id} className="log-row" style={{ cursor: "default" }}>
-              <span className={`badge sm ${m.cerrada ? "ok" : m.presente ? "neutral" : "danger"}`}>{m.cerrada ? "Mesa cerrada" : m.presente ? "Presente" : "Sin marcar"}</span>
-              <div>
-                <b>{m.nombre}</b>
-                <p>
-                  {ROL_LABEL[m.rol] ?? m.rol} {m.mesa ? `· Mesa ${m.mesa}` : ""}
+        <>
+          <p className="ext-note" style={{ marginTop: 0 }}>
+            <b>{cerradasCircuito}</b> de <b>{totalCircuito}</b> mesas cerradas
+            {sinFiscal > 0 ? ` · ${sinFiscal} escuela${sinFiscal === 1 ? "" : "s"} sin fiscal general` : ""}
+          </p>
+          <div className="log-list">
+            {!data.escuelas.length && !data.sin_escuela.length && <p className="ext-empty">No hay escuelas cargadas para tu circuito.</p>}
+            {data.escuelas.map((e) => (
+              <div key={e.escuela_id} className="log-row" style={{ cursor: "default", display: "block" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}>
+                  <b style={{ minWidth: 0, overflowWrap: "anywhere" }}>{e.nombre}</b>
+                  <span className={`badge sm ${e.mesas_cerradas === e.cant_mesas ? "ok" : "neutral"}`} style={{ flex: "none" }}>
+                    {e.mesas_cerradas}/{e.cant_mesas}
+                  </span>
+                </div>
+                <p style={{ margin: "2px 0 0" }}>
+                  Circ. {e.circuito_codigo}
+                  {e.direccion ? ` · ${e.direccion}` : ""}
                 </p>
+                <p style={{ margin: "2px 0 0" }}>
+                  {e.fiscal_general_nombre ? `Fiscal general: ${e.fiscal_general_nombre}${e.presente ? " (presente)" : ""}` : "Sin fiscal general asignado"}
+                  {e.mesas_presentes > 0 ? ` · ${e.mesas_presentes} mesa${e.mesas_presentes === 1 ? "" : "s"} con fiscal presente` : ""}
+                </p>
+                <Progreso hechas={e.mesas_cerradas} total={e.cant_mesas} />
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+            {data.sin_escuela.map((e) => (
+              <div key={e.fiscal_general_padron_id} className="log-row" style={{ cursor: "default" }}>
+                <span className={`badge sm ${e.presente ? "ok" : "neutral"}`}>{e.presente ? "Presente" : "Sin marcar"}</span>
+                <div>
+                  <b>{e.fiscal_general_nombre}</b>
+                  <p>
+                    Sin escuela asignada · {e.mesas_cerradas} mesa{e.mesas_cerradas === 1 ? "" : "s"} cerrada{e.mesas_cerradas === 1 ? "" : "s"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {!loading && data?.role === "fiscal_general" && (
+        <>
+          {data.escuela ? (
+            <>
+              <p style={{ margin: "0 0 2px" }}>
+                <b>{data.escuela.nombre}</b>
+              </p>
+              <p className="ext-note" style={{ marginTop: 0 }}>
+                Circ. {data.escuela.circuito}
+                {data.escuela.direccion ? ` · ${data.escuela.direccion}` : ""} · mesas {data.escuela.mesa_desde} a {data.escuela.mesa_hasta}
+              </p>
+              <p className="ext-note" style={{ marginTop: 0 }}>
+                <b>{data.mesas.filter((m) => m.cerrada).length}</b> de <b>{data.escuela.cant_mesas}</b> mesas cerradas
+              </p>
+              <Progreso hechas={data.mesas.filter((m) => m.cerrada).length} total={data.escuela.cant_mesas} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(68px, 1fr))", gap: 6, margin: "12px 0 6px" }}>
+                {data.mesas.map((m) => (
+                  <div
+                    key={m.mesa}
+                    style={{
+                      minWidth: 0,
+                      borderRadius: 10,
+                      padding: "6px 4px",
+                      textAlign: "center",
+                      fontSize: 11,
+                      fontWeight: 800,
+                      background: m.cerrada ? "#e3faf0" : m.presente ? "#fff3e0" : "#eef3f8",
+                      color: m.cerrada ? "#0f6b3a" : m.presente ? "#8a5407" : "var(--muted)",
+                    }}
+                  >
+                    {m.mesa}
+                    <span style={{ display: "block", fontSize: 9.5, fontWeight: 700 }}>
+                      {m.cerrada ? "Cerrada" : m.presente ? (m.votantes != null ? `${m.votantes} vot.` : "En curso") : "Sin reporte"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="ext-note" style={{ marginTop: 0 }}>Verde: cerrada · Naranja: fiscal presente · Gris: sin reporte.</p>
+            </>
+          ) : (
+            <p className="ext-note">Todavía no tenés una escuela asignada. Pedile a tu dirigente que te la cargue.</p>
+          )}
+          <h3 style={{ fontSize: 13, margin: "14px 0 6px", color: "var(--navy)" }}>Mi equipo</h3>
+          <div className="log-list">
+            {!data.equipo.length && <p className="ext-empty">Todavía no tenés fiscales de mesa ni suplentes a cargo.</p>}
+            {data.equipo.map((m) => (
+              <div key={m.padron_id} className="log-row" style={{ cursor: "default" }}>
+                <span className={`badge sm ${m.cerrada ? "ok" : m.presente ? "neutral" : "danger"}`}>{m.cerrada ? "Mesa cerrada" : m.presente ? "Presente" : "Sin marcar"}</span>
+                <div>
+                  <b>{m.nombre}</b>
+                  <p>
+                    {ROL_LABEL[m.rol] ?? m.rol} {m.mesa ? `· Mesa ${m.mesa}` : ""}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );

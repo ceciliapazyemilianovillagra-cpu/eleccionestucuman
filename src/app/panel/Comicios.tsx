@@ -32,7 +32,11 @@ type Mesa = {
   nagle_votes: number | null;
   acta_path: string | null;
   closed_at: string | null;
+  escuela_id: number | null;
+  escuela_nombre: string | null;
+  circuito_codigo: string | null;
 };
+type Escuela = { id: number; circuito: string; circuito_num: string; nombre: string; direccion: string | null; mesa_desde: number; mesa_hasta: number; cant_mesas: number };
 
 function FiscalesTab({ token }: { token: string }) {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -43,6 +47,32 @@ function FiscalesTab({ token }: { token: string }) {
   const [addResults, setAddResults] = useState<Voter[]>([]);
   const [addSearching, setAddSearching] = useState(false);
   const [selected, setSelected] = useState<Voter | null>(null);
+  const [view, setView] = useState<"mesas" | "escuelas">("mesas");
+  const [escuelas, setEscuelas] = useState<Escuela[]>([]);
+  const [circFilter, setCircFilter] = useState("");
+
+  useEffect(() => {
+    fetch(`${SUPABASE_URL}/rest/v1/escuelas?select=id,circuito,circuito_num,nombre,direccion,mesa_desde,mesa_hasta,cant_mesas&order=id`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((rows) => setEscuelas(Array.isArray(rows) ? rows : []))
+      .catch(() => setEscuelas([]));
+  }, [token]);
+
+  const porEscuela = escuelas
+    .filter((e) => !circFilter || e.circuito_num === circFilter)
+    .map((e) => {
+      const rows = mesas.filter((m) => m.escuela_id === e.id);
+      return {
+        ...e,
+        cerradas: rows.filter((m) => m.closed_at).length,
+        presentes: rows.filter((m) => m.presente_at).length,
+        votantes: rows.reduce((n, m) => n + (m.last_voter_count ?? 0), 0),
+        votos: rows.reduce((n, m) => n + (m.closed_at ? m.nagle_votes ?? 0 : 0), 0),
+      };
+    });
+  const circuitosLista = Array.from(new Set(escuelas.map((e) => e.circuito_num))).sort((a, b) => Number(a) - Number(b));
 
   async function load() {
     setLoading(true);
@@ -79,8 +109,21 @@ function FiscalesTab({ token }: { token: string }) {
 
   async function exportExcel() {
     const XLSX = await import("xlsx");
-    const data = mesas.map((m) => ({
+    const data = view === "escuelas"
+      ? porEscuela.map((e) => ({
+          Escuela: e.nombre,
+          Circuito: e.circuito,
+          Direccion: e.direccion ?? "",
+          "Mesas (total)": e.cant_mesas,
+          "Mesas cerradas": e.cerradas,
+          "Mesas con fiscal presente": e.presentes,
+          "Votantes reportados": e.votantes,
+          "Votos del candidato": e.votos,
+        }))
+      : mesas.map((m) => ({
       Mesa: m.mesa,
+      Escuela: m.escuela_nombre ?? "",
+      Circuito: m.circuito_codigo ?? "",
       Fiscal: m.fiscal_nombre ?? "",
       "Presente desde": m.presente_at ? formatDateTime(m.presente_at) : "",
       "Últ. votantes en mesa": m.last_voter_count ?? "",
@@ -101,8 +144,10 @@ function FiscalesTab({ token }: { token: string }) {
     doc.text("Comicios · Fiscales", 14, 14);
     autoTable(doc, {
       startY: 20,
-      head: [["Mesa", "Fiscal", "Votantes", "Votos", "Acta", "Cerrada"]],
-      body: mesas.map((m) => [m.mesa, m.fiscal_nombre ?? "", m.last_voter_count ?? "", m.nagle_votes ?? "", m.acta_path ? "Sí" : "No", m.closed_at ? formatDateTime(m.closed_at) : "No"]),
+      head: view === "escuelas" ? [["Escuela", "Circ.", "Mesas", "Cerradas", "Presentes", "Votantes", "Votos"]] : [["Mesa", "Escuela", "Fiscal", "Votantes", "Votos", "Acta", "Cerrada"]],
+      body: view === "escuelas"
+        ? porEscuela.map((e) => [e.nombre, e.circuito, e.cant_mesas, e.cerradas, e.presentes, e.votantes, e.votos])
+        : mesas.map((m) => [m.mesa, m.escuela_nombre ?? "", m.fiscal_nombre ?? "", m.last_voter_count ?? "", m.nagle_votes ?? "", m.acta_path ? "Sí" : "No", m.closed_at ? formatDateTime(m.closed_at) : "No"]),
       styles: { fontSize: 8 },
     });
     doc.save("comicios_fiscales.pdf");
@@ -181,6 +226,10 @@ function FiscalesTab({ token }: { token: string }) {
           </div>
         </div>
       )}
+      <div className="config-tabs" style={{ marginBottom: 12 }}>
+        <button className={view === "mesas" ? "active" : ""} onClick={() => setView("mesas")}>POR MESA</button>
+        <button className={view === "escuelas" ? "active" : ""} onClick={() => setView("escuelas")}>POR ESCUELA</button>
+      </div>
       <div className="export-row" style={{ marginBottom: 0 }}>
         <button className="ext-btn secondary" onClick={load} disabled={loading}>
           {loading ? "ACTUALIZANDO…" : "ACTUALIZAR"}
@@ -192,15 +241,48 @@ function FiscalesTab({ token }: { token: string }) {
           EXPORTAR PDF
         </button>
       </div>
-      {!loading && !mesas.length && <p className="empty">Todavía no hay reportes de mesas.</p>}
+      {view === "escuelas" && (
+        <>
+          <select value={circFilter} onChange={(e) => setCircFilter(e.target.value)} style={{ margin: "12px 0", maxWidth: 260 }}>
+            <option value="">Todos los circuitos</option>
+            {circuitosLista.map((c) => (
+              <option key={c} value={c}>Circuito {c}</option>
+            ))}
+          </select>
+          {!escuelas.length && <p className="empty">No se pudieron cargar las escuelas.</p>}
+          <div className="log-list">
+            {porEscuela.map((e) => (
+              <div key={e.id} className="log-row" style={{ alignItems: "flex-start" }}>
+                <span className={`badge ${e.cerradas === e.cant_mesas ? "ok" : "neutral"}`}>{e.cerradas}/{e.cant_mesas}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <b>{e.nombre}</b>
+                  <p>
+                    Circ. {e.circuito}{e.direccion ? ` · ${e.direccion}` : ""} · mesas {e.mesa_desde}-{e.mesa_hasta}
+                  </p>
+                  <p>
+                    {e.presentes} con fiscal presente · {e.votantes.toLocaleString("es-AR")} votantes reportados{e.cerradas ? ` · ${e.votos.toLocaleString("es-AR")} votos` : ""}
+                  </p>
+                  <div className="progress-bar" style={{ marginTop: 6 }}><i style={{ width: `${pct(e.cerradas, e.cant_mesas)}%` }} /></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {view === "mesas" && !loading && !mesas.length && <p className="empty">Todavía no hay reportes de mesas.</p>}
       <div className="log-list">
-        {mesas.map((m) => (
+        {view === "mesas" && mesas.map((m) => (
           <div key={m.mesa} className="log-row" style={{ alignItems: "flex-start" }}>
             <span className={`badge ${m.closed_at ? "ok" : m.presente_at ? "neutral" : "danger"}`}>
               {m.closed_at ? "Cerrada" : m.presente_at ? "En curso" : "Sin fiscal"}
             </span>
             <div>
               <b>Mesa {m.mesa}</b>
+              {m.escuela_nombre && (
+                <p>
+                  {m.escuela_nombre} · Circ. {m.circuito_codigo}
+                </p>
+              )}
               <p>
                 {m.fiscal_nombre ? `Fiscal: ${m.fiscal_nombre}` : "Sin fiscal presente"}
                 {m.presente_at ? ` · presente ${formatDateTime(m.presente_at)}` : ""}

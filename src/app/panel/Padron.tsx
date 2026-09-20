@@ -145,6 +145,7 @@ export function Padron({ token, close }: { token: string; close: () => void }) {
                 <b>{v.apellido_nombre}</b>
                 <p>
                   DNI {v.dni} · Mesa {v.mesa}
+                  {v.escuela_nombre ? ` · ${v.escuela_nombre}` : ""}
                 </p>
               </div>
               <span>›</span>

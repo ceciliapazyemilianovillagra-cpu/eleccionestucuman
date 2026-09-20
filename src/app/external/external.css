@@ -140,7 +140,8 @@
 }
 .ext-iconbtn-x:disabled { opacity: .5; cursor: default; }
 
-.ext-body { width: min(100%, 760px); margin: 0 auto; padding: 18px 20px 10px; display: grid; gap: 18px; overflow-x: hidden; }
+.ext-body { width: min(100%, 760px); margin: 0 auto; padding: 18px 20px 10px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; overflow-x: hidden; overflow-x: clip; }
+.ext-card { min-width: 0; }
 
 /* ---- Cards ---- */
 .ext-card {
@@ -180,6 +181,11 @@
   font: inherit; font-size: 16px; background: #fbfdff; color: var(--ink);
 }
 .ext-voter input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px #1478b81a; }
+.ext-voter select {
+  display: block; width: 100%; max-width: 100%; min-width: 0; border: 1.5px solid #dbe8f1; border-radius: 12px; padding: 12px;
+  font: inherit; font-size: 16px; background: #fbfdff; color: var(--ink); text-overflow: ellipsis;
+}
+.ext-voter select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px #1478b81a; }
 
 /* ---- Selector de roles con tarjetas ---- */
 .role-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -237,6 +243,7 @@
 .ext-success-msg { background: #e9fbf3; color: #0f6b3a; border-radius: 11px; padding: 11px 13px; font-size: 13px; font-weight: 700; margin-top: 12px; }
 
 @media (max-width: 480px) {
+  .ext-btn, .ext-search button { white-space: normal; min-width: 0; line-height: 1.2; }
   .ext-search { flex-direction: column; }
   .ext-search button { width: 100%; }
   .ext-topbar h1 { font-size: 18px; }

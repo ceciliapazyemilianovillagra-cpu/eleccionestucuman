@@ -3,7 +3,7 @@ export const MOVILIZADORES_URL = `${SUPABASE_URL}/functions/v1/movilizadores`;
 export const SUPABASE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjZHRiaW5xbHN2c3ZtcnlteWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzNDU3NTQsImV4cCI6MjEwMzkyMTc1NH0.Dha8bpiFQ7THgKszkFak1vn5XrsY0XZWz_Lu9MGMKz0";
 
-export type Voter = { id: number; dni: string; apellido_nombre: string; domicilio: string | null; circuito: string; circuito_nombre: string | null; mesa: string; orden: number | null; anio_nacimiento: number | null };
+export type Voter = { id: number; dni: string; apellido_nombre: string; domicilio: string | null; circuito: string; circuito_nombre: string | null; mesa: string; orden: number | null; anio_nacimiento: number | null; escuela_nombre?: string | null; escuela_direccion?: string | null; circuito_codigo?: string | null };
 export type AppUser = { email: string; user_type: "superadmin" | "administrador" | "dirigente" | "operador"; allowed_modules: string[]; active: boolean; candidate_id?: number | null; bloque_id?: number | null };
 export type ManagedUser = AppUser & { user_id: string; created_at?: string };
 export type Candidato = { id: number; nombre: string; cargo: "legislador" | "concejal" | "delegado_comunal" | "otro"; activo: boolean; bloque_id?: number | null; dni?: string | null; padron_id?: number | null };
