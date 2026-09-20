@@ -107,6 +107,27 @@ function FiscalesTab({ token }: { token: string }) {
     }
   }
 
+  async function verActa(mesa: string) {
+    const w = window.open("", "_blank");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/comicios`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "acta_url", mesa }),
+      });
+      const d = await res.json();
+      if (d.url && w) {
+        w.location.href = d.url;
+      } else {
+        w?.close();
+        window.alert(d.error || "No se pudo abrir el acta.");
+      }
+    } catch {
+      w?.close();
+      window.alert("No se pudo abrir el acta. Revisá tu conexión.");
+    }
+  }
+
   async function exportExcel() {
     const XLSX = await import("xlsx");
     const data = view === "escuelas"
@@ -295,6 +316,11 @@ function FiscalesTab({ token }: { token: string }) {
                   ? `Cerrada ${formatDateTime(m.closed_at)} · Votos: ${m.nagle_votes} · Acta ${m.acta_path ? "subida" : "sin subir"}`
                   : "Mesa aún no cerrada"}
               </p>
+              {m.acta_path && (
+                <button className="ext-btn secondary" style={{ padding: "6px 12px", marginTop: 6 }} onClick={() => verActa(m.mesa)}>
+                  VER ACTA
+                </button>
+              )}
             </div>
           </div>
         ))}
