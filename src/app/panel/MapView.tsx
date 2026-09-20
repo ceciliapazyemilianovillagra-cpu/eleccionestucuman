@@ -91,7 +91,7 @@ const CIRCUITO_COLORS: Record<string, string> = {
 type FiscalLoc = { mesa: string; fiscal_nombre: string; latitude: number; longitude: number; marked_at: string };
 type TransportLoc = { voter_id: number; voter_nombre: string; mobilizer_nombre: string | null; status: string; latitude: number; longitude: number; marked_at: string };
 type MapPoint = { id: number; type: "bunker" | "punto_caliente" | "otro" | "escuela"; label: string; description: string | null; latitude: number; longitude: number };
-type EscuelaGeo = { id: number; circuito: string; nombre: string; direccion: string | null; mesa_desde: number; mesa_hasta: number; cant_mesas: number; electores: number | null; lat: number; lng: number; geo_nota: string | null };
+type EscuelaGeo = { id: number; circuito: string; nombre: string; direccion: string | null; mesa_desde: number; mesa_hasta: number; cant_mesas: number; electores: number | null; lat: number | null; lng: number | null; geo_nota: string | null };
 type Cobertura = { circuito: string; circuito_nombre: string | null; total_padron: number; movilizadores: number; fiscales: number; colaboradores: number; cobertura_pct: number | null };
 
 const FILTERS = [
@@ -125,16 +125,56 @@ export default function MapView({ token }: { token: string }) {
   const [showCircuitos, setShowCircuitos] = useState(false);
   const [showEscuelas, setShowEscuelas] = useState(true);
   const [escuelasGeo, setEscuelasGeo] = useState<EscuelaGeo[]>([]);
+  const [isSuper, setIsSuper] = useState(false);
+  const [coordText, setCoordText] = useState<Record<number, string>>({});
+  const [coordMsg, setCoordMsg] = useState<Record<number, string>>({});
+  const [savingEsc, setSavingEsc] = useState<number | null>(null);
   const [estadoEscuela, setEstadoEscuela] = useState<Record<number, { cerradas: number; presentes: number }>>({});
 
   useEffect(() => {
-    fetch(`${SUPABASE_URL}/rest/v1/escuelas?select=id,circuito,nombre,direccion,mesa_desde,mesa_hasta,cant_mesas,electores,lat,lng,geo_nota&lat=not.is.null&order=id`, {
+    rpc(token, "is_superadmin").then((v) => setIsSuper(v === true)).catch(() => setIsSuper(false));
+  }, [token]);
+
+  useEffect(() => {
+    fetch(`${SUPABASE_URL}/rest/v1/escuelas?select=id,circuito,nombre,direccion,mesa_desde,mesa_hasta,cant_mesas,electores,lat,lng,geo_nota&order=id`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then((rows) => setEscuelasGeo(Array.isArray(rows) ? rows : []))
       .catch(() => setEscuelasGeo([]));
   }, [token]);
+
+  const googleSearchUrl = (e: EscuelaGeo) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${e.nombre}, ${e.direccion ?? ""}, San Miguel de Tucumán`)}`;
+  const escuelasARevisar = escuelasGeo.filter((e) => e.lat == null || (e.geo_nota && /revisar|aproximada/i.test(e.geo_nota)));
+
+  async function guardarCoordenadas(e: EscuelaGeo) {
+    const m = (coordText[e.id] ?? "").match(/(-?\d{1,3}\.\d+)[\s,;]+(-?\d{1,3}\.\d+)/);
+    if (!m) {
+      setCoordMsg((prev) => ({ ...prev, [e.id]: "Pegá las coordenadas como las muestra Google Maps, por ejemplo: -26.8306855, -65.2014878" }));
+      return;
+    }
+    const lat = Number(m[1]);
+    const lng = Number(m[2]);
+    if (lat < -27.3 || lat > -26.6 || lng < -65.5 || lng > -65.0) {
+      setCoordMsg((prev) => ({ ...prev, [e.id]: "Esas coordenadas quedan fuera de San Miguel de Tucumán. Revisalas." }));
+      return;
+    }
+    setSavingEsc(e.id);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/escuelas?id=eq.${e.id}`, {
+      method: "PATCH",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify({ lat, lng, geo_nota: "Confirmada en Google Maps", updated_at: new Date().toISOString() }),
+    });
+    const rows = res.ok ? await res.json() : [];
+    setSavingEsc(null);
+    if (Array.isArray(rows) && rows.length) {
+      setEscuelasGeo((prev) => prev.map((x) => (x.id === e.id ? { ...x, lat, lng, geo_nota: "Confirmada en Google Maps" } : x)));
+      setCoordText((prev) => ({ ...prev, [e.id]: "" }));
+      setCoordMsg((prev) => ({ ...prev, [e.id]: "" }));
+    } else {
+      setCoordMsg((prev) => ({ ...prev, [e.id]: "No se pudo guardar: solo el superadmin puede corregir ubicaciones." }));
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -256,7 +296,7 @@ export default function MapView({ token }: { token: string }) {
           style={{ borderColor: "#5b3fa0", color: showEscuelas ? "#fff" : "#5b3fa0", background: showEscuelas ? "#5b3fa0" : "#fff" }}
           onClick={() => setShowEscuelas((v) => !v)}
         >
-          Escuelas oficiales ({escuelasGeo.length})
+          Escuelas oficiales ({escuelasGeo.filter((e) => e.lat != null).length})
         </button>
         <button
           className="map-filter-btn"
@@ -314,12 +354,12 @@ export default function MapView({ token }: { token: string }) {
             />
           )}
           {showEscuelas &&
-            escuelasGeo.map((e) => {
+            escuelasGeo.filter((e) => e.lat != null && e.lng != null).map((e) => {
               const st = estadoEscuela[e.id];
               const todasCerradas = st && st.cerradas >= e.cant_mesas;
               const color = todasCerradas ? "#147a4c" : st && (st.cerradas || st.presentes) ? "#f2a23a" : "#5b3fa0";
               return (
-                <CircleMarker key={`e-${e.id}`} center={[e.lat, e.lng]} radius={7} pathOptions={{ color: "#fff", weight: 2, fillColor: color, fillOpacity: 0.95 }}>
+                <CircleMarker key={`e-${e.id}`} center={[e.lat as number, e.lng as number]} radius={7} pathOptions={{ color: "#fff", weight: 2, fillColor: color, fillOpacity: 0.95 }}>
                   <Popup>
                     <b>{e.nombre}</b>
                     <br />
@@ -340,8 +380,12 @@ export default function MapView({ token }: { token: string }) {
                       </>
                     )}
                     <br />
+                    <a href={googleSearchUrl(e)} target="_blank" rel="noreferrer">
+                      Buscar en Google Maps
+                    </a>
+                    {" · "}
                     <a href={`https://www.google.com/maps?q=${e.lat},${e.lng}`} target="_blank" rel="noreferrer">
-                      Abrir en Google Maps
+                      Ver este pin
                     </a>
                   </Popup>
                 </CircleMarker>
@@ -426,6 +470,42 @@ export default function MapView({ token }: { token: string }) {
           {pendingCoord && <Marker position={[pendingCoord.lat, pendingCoord.lng]} icon={ICONS[adding ?? "otro"]} />}
         </MapContainer>
       </div>
+      {escuelasARevisar.length > 0 && (
+        <details className="search-card" style={{ marginTop: 14 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 800 }}>Escuelas a ubicar o revisar ({escuelasARevisar.length})</summary>
+          <p className="ext-note">
+            Abrí cada una en Google Maps, hacé clic derecho sobre el punto correcto, tocá las coordenadas para copiarlas y pegalas acá.
+            {!isSuper && " Solo el superadmin puede guardar cambios."}
+          </p>
+          <div className="log-list">
+            {escuelasARevisar.map((e) => (
+              <div key={e.id} className="log-row" style={{ display: "block", cursor: "default" }}>
+                <b>{e.nombre}</b>
+                <p style={{ margin: "2px 0" }}>
+                  Circ. {e.circuito} · {e.direccion ?? "sin dirección"} · {e.lat == null ? "sin ubicación" : "ubicación aproximada"}
+                </p>
+                <a href={googleSearchUrl(e)} target="_blank" rel="noreferrer">
+                  Buscar en Google Maps
+                </a>
+                {isSuper && (
+                  <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                    <input
+                      style={{ flex: 1, minWidth: 180 }}
+                      placeholder="-26.8306855, -65.2014878"
+                      value={coordText[e.id] ?? ""}
+                      onChange={(ev) => setCoordText((prev) => ({ ...prev, [e.id]: ev.target.value }))}
+                    />
+                    <button className="ext-btn" disabled={savingEsc === e.id || !(coordText[e.id] ?? "").trim()} onClick={() => guardarCoordenadas(e)}>
+                      {savingEsc === e.id ? "GUARDANDO…" : "GUARDAR"}
+                    </button>
+                  </div>
+                )}
+                {coordMsg[e.id] && <p className="ext-error" style={{ marginTop: 6 }}>{coordMsg[e.id]}</p>}
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }
