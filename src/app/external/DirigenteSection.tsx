@@ -13,6 +13,7 @@ type Person = {
   current_circuito: string | null;
   current_escuela_id: number | null;
   current_supervisor_padron_id: number | null;
+  current_telefono: string | null;
 };
 type Assigned = { padron_id: number; roles: string[]; dni: string; apellido_nombre: string; has_code: boolean; disputed: boolean | null };
 type RoleResult = { role: string; status: string; message?: string };
@@ -46,6 +47,9 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
   const [selected, setSelected] = useState<Person | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [telefono, setTelefono] = useState("");
+  const [telefonoActual, setTelefonoActual] = useState<string | null>(null);
+  const [editandoTel, setEditandoTel] = useState(false);
+  const [telBusy, setTelBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [results, setResults] = useState<RoleResult[]>([]);
   const [credential, setCredential] = useState<Credential | null>(null);
@@ -117,6 +121,8 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
     setSelected(p);
     setRoles(p.current_roles.filter((r) => ROLE_OPTIONS.some((o) => o.key === r)));
     setTelefono("");
+    setTelefonoActual(p.current_telefono ?? null);
+    setEditandoTel(false);
     setCircuito(p.current_circuito && p.current_circuito !== "PENDIENTE" ? p.current_circuito : "");
     setEscuelaId(p.current_escuela_id ? String(p.current_escuela_id) : p.current_roles.includes("fiscal_general") && p.current_circuito === "PENDIENTE" ? "PENDIENTE" : "");
     setSupervisorId(p.current_supervisor_padron_id ? String(p.current_supervisor_padron_id) : "");
@@ -135,15 +141,39 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
       action: "dirigente_assign_roles",
       padron_id: selected.id,
       roles,
-      telefono,
+      telefono: telefonoActual && !editandoTel ? undefined : telefono,
       circuito: needsCircuito ? circuito : undefined,
       escuela_id: needsEscuela ? escuelaId : undefined,
       supervisor_padron_id: needsSupervisor ? supervisorId : undefined,
     });
     setSaving(false);
+    if (telefono.trim() && !(telefonoActual && !editandoTel) && (d.results || []).some((r: RoleResult) => r.status === "ok")) {
+      setTelefonoActual(telefono.trim());
+      setEditandoTel(false);
+      setTelefono("");
+    }
     setResults(d.results || []);
     setCredential(d.credential || null);
     loadAssigned();
+  }
+
+  async function guardarCelular(valor: string) {
+    if (!selected) return;
+    setTelBusy(true);
+    const d = await callFn("comicios", token, { action: "dirigente_set_phone", padron_id: selected.id, telefono: valor });
+    setTelBusy(false);
+    if (d.success) {
+      setTelefonoActual(d.telefono ?? null);
+      setEditandoTel(false);
+      setTelefono("");
+    } else {
+      window.alert(d.error || "No se pudo guardar el celular.");
+    }
+  }
+
+  async function borrarCelular() {
+    if (!selected || !window.confirm(`¿Borrar el celular de ${selected.apellido_nombre}?`)) return;
+    await guardarCelular("");
   }
 
   async function resetCredential(padronId: number) {
@@ -210,7 +240,49 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
             <span className="dni">DNI {selected.dni}</span>
             <h3>{selected.apellido_nombre}</h3>
             <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: "var(--muted)", margin: "10px 0 6px" }}>CELULAR</label>
-            <input inputMode="tel" placeholder="381 000 0000" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+            {telefonoActual && !editandoTel ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                <b style={{ fontSize: 16 }}>{telefonoActual}</b>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    type="button"
+                    className="ext-btn secondary"
+                    style={{ padding: "8px 12px" }}
+                    onClick={() => {
+                      setTelefono(telefonoActual);
+                      setEditandoTel(true);
+                    }}
+                  >
+                    EDITAR
+                  </button>
+                  <button type="button" className="ext-btn warn" style={{ padding: "8px 12px" }} disabled={telBusy} onClick={borrarCelular}>
+                    BORRAR
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <input inputMode="tel" placeholder="381 000 0000" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+                {telefonoActual && editandoTel && (
+                  <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                    <button type="button" className="ext-btn" style={{ padding: "8px 12px" }} disabled={telBusy || !telefono.trim()} onClick={() => guardarCelular(telefono)}>
+                      {telBusy ? "GUARDANDO…" : "GUARDAR CELULAR"}
+                    </button>
+                    <button
+                      type="button"
+                      className="ext-btn secondary"
+                      style={{ padding: "8px 12px" }}
+                      onClick={() => {
+                        setEditandoTel(false);
+                        setTelefono("");
+                      }}
+                    >
+                      CANCELAR
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
             <div className="role-cards" style={{ marginTop: 14 }}>
               {ROLE_OPTIONS.map((r) => {
                 const Icon = r.icon;

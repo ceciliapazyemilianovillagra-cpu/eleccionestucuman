@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { SUPABASE_URL, SUPABASE_KEY, Voter, Candidato, electoralRoles, decodeJwtSub, rpc, copyText, listCandidatos } from "./shared";
 
+type EscuelaOpt = { id: number; circuito: string; circuito_num: string; nombre: string; mesa_desde: number; mesa_hasta: number };
+
 const FISCAL_ROLES = ["fiscal", "fiscal_general", "fiscal_mesa", "fiscal_suplente", "coordinador_circuito", "coordinador_general"];
 
 export function VoterSheet({ voter, token, close }: { voter: Voter; token: string; close: () => void }) {
@@ -17,21 +19,30 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
   const [resetting, setResetting] = useState(false);
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   const [candidateId, setCandidateId] = useState("");
+  const [escuelas, setEscuelas] = useState<EscuelaOpt[]>([]);
+  const [escuelaId, setEscuelaId] = useState("");
+  const [circuito, setCircuito] = useState("");
 
   useEffect(() => {
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
     Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/voter_profiles?select=telefono,estado,observaciones&padron_id=eq.${voter.id}`, { headers }).then((r) => r.json()),
-      fetch(`${SUPABASE_URL}/rest/v1/person_roles?select=role,candidate_id&padron_id=eq.${voter.id}&active=is.true`, { headers }).then((r) => r.json()),
+      fetch(`${SUPABASE_URL}/rest/v1/person_roles?select=role,candidate_id,circuito,escuela_id&padron_id=eq.${voter.id}&active=is.true`, { headers }).then((r) => r.json()),
+      fetch(`${SUPABASE_URL}/rest/v1/escuelas?select=id,circuito,circuito_num,nombre,mesa_desde,mesa_hasta&order=id`, { headers }).then((r) => r.json()).catch(() => []),
       listCandidatos(token, true),
       rpc(token, "my_candidate_id").catch(() => null),
-    ]).then(([profile, assigned, candidatosList, myCandidateId]) => {
+    ]).then(([profile, assigned, escuelasList, candidatosList, myCandidateId]) => {
       if (profile?.[0]) {
         setPhone(profile[0].telefono || "");
         setStatus(profile[0].estado || "sin_contactar");
         setNotes(profile[0].observaciones || "");
       }
-      const assignedRows: { role: string; candidate_id: number | null }[] = assigned || [];
+      const assignedRows: { role: string; candidate_id: number | null; circuito: string | null; escuela_id: number | null }[] = assigned || [];
+      setEscuelas(Array.isArray(escuelasList) ? escuelasList : []);
+      const fg = assignedRows.find((item) => item.role === "fiscal_general");
+      if (fg) setEscuelaId(fg.escuela_id ? String(fg.escuela_id) : fg.circuito === "PENDIENTE" ? "PENDIENTE" : "");
+      const coord = assignedRows.find((item) => item.role === "coordinador_circuito");
+      if (coord?.circuito && coord.circuito !== "PENDIENTE") setCircuito(coord.circuito);
       const current = assignedRows.map((item) => item.role);
       setRoles(current);
       setSavedRoles(current);
@@ -80,12 +91,29 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
       setSaved("Elegí a qué candidato pertenecen estos roles.");
       return;
     }
+    if (roles.includes("fiscal_general") && !escuelaId) {
+      setSaved("Elegí la escuela del fiscal general (o dejala pendiente de asignación).");
+      return;
+    }
+    if (roles.includes("coordinador_circuito") && !circuito) {
+      setSaved("Elegí el circuito que coordina.");
+      return;
+    }
     setSaved("Guardando…");
+    const extraFor = (role: string): Record<string, unknown> => {
+      if (role === "fiscal_general") {
+        if (escuelaId === "PENDIENTE") return { circuito: "PENDIENTE", escuela_id: null };
+        const esc = escuelas.find((e) => String(e.id) === escuelaId);
+        return esc ? { circuito: esc.circuito_num, escuela_id: esc.id } : {};
+      }
+      if (role === "coordinador_circuito") return { circuito };
+      return {};
+    };
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
     const requests = [
       fetch(`${SUPABASE_URL}/rest/v1/rpc/save_voter_profile`, { method: "POST", headers, body: JSON.stringify({ p_padron_id: voter.id, p_telefono: phone, p_estado: status, p_observaciones: notes }) }),
-      ...added.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles`, { method: "POST", headers, body: JSON.stringify({ padron_id: voter.id, role, candidate_id: Number(candidateId) }) })),
-      ...kept.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${voter.id}&role=eq.${role}`, { method: "PATCH", headers, body: JSON.stringify({ candidate_id: Number(candidateId) }) })),
+      ...added.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles`, { method: "POST", headers, body: JSON.stringify({ padron_id: voter.id, role, candidate_id: Number(candidateId), ...extraFor(role) }) })),
+      ...kept.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${voter.id}&role=eq.${role}`, { method: "PATCH", headers, body: JSON.stringify({ candidate_id: Number(candidateId), ...extraFor(role) }) })),
       ...removed.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${voter.id}&role=eq.${role}`, { method: "DELETE", headers })),
     ];
     const results = await Promise.all(requests);
@@ -178,6 +206,39 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
               ))}
             </div>
           </fieldset>
+          {roles.includes("fiscal_general") && (
+            <label>
+              Escuela a cargo
+              <select value={escuelaId} onChange={(e) => setEscuelaId(e.target.value)}>
+                <option value="">Elegí una escuela…</option>
+                <option value="PENDIENTE">Pendiente de asignación</option>
+                {Array.from(new Set(escuelas.map((e) => e.circuito))).map((code) => (
+                  <optgroup key={code} label={`Circuito ${code}`}>
+                    {escuelas.filter((e) => e.circuito === code).map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.nombre} · mesas {e.mesa_desde}-{e.mesa_hasta}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          )}
+          {roles.includes("coordinador_circuito") && (
+            <label>
+              Circuito que coordina
+              <select value={circuito} onChange={(e) => setCircuito(e.target.value)}>
+                <option value="">Elegí un circuito…</option>
+                {Array.from(new Set(escuelas.map((e) => e.circuito_num)))
+                  .sort((a, b) => Number(a) - Number(b))
+                  .map((c) => (
+                    <option key={c} value={c}>
+                      Circuito {c}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
           {(roles.includes("movilizador") || roles.includes("chofer") || roles.includes("dirigente") || roles.includes("candidato") || roles.some((r) => FISCAL_ROLES.includes(r))) && (
             <section className="mobilizer-access">
               <small>ACCESO EXTERNO</small>
