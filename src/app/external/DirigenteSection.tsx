@@ -54,6 +54,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
   const [results, setResults] = useState<RoleResult[]>([]);
   const [credential, setCredential] = useState<Credential | null>(null);
   const [msg, setMsg] = useState("");
+  const [assignError, setAssignError] = useState("");
 
   const [assignedList, setAssignedList] = useState<Assigned[]>([]);
   const [listLoading, setListLoading] = useState(true);
@@ -128,6 +129,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
     setSupervisorId(p.current_supervisor_padron_id ? String(p.current_supervisor_padron_id) : "");
     setResults([]);
     setCredential(null);
+    setAssignError("");
   }
 
   function toggleRole(role: string) {
@@ -137,6 +139,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
   async function assign() {
     if (!selected || !roles.length) return;
     setSaving(true);
+    setAssignError("");
     const d = await callFn("comicios", token, {
       action: "dirigente_assign_roles",
       padron_id: selected.id,
@@ -147,6 +150,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
       supervisor_padron_id: needsSupervisor ? supervisorId : undefined,
     });
     setSaving(false);
+    if (d.error) setAssignError(d.error);
     if (telefono.trim() && !(telefonoActual && !editandoTel) && (d.results || []).some((r: RoleResult) => r.status === "ok")) {
       setTelefonoActual(telefono.trim());
       setEditandoTel(false);
@@ -367,6 +371,7 @@ export function DirigenteSection({ token, isAdmin }: { token: string; isAdmin: b
                 {saving ? "GUARDANDO…" : "GUARDAR ROLES"}
               </button>
             </div>
+            {assignError && <p className="ext-error">{assignError}</p>}
             {results.length > 0 && (
               <div className="log-list" style={{ marginTop: 14 }}>
                 {results.map((r) => (

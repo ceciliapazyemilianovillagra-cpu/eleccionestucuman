@@ -2,6 +2,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { SUPABASE_URL, SUPABASE_KEY, Bloque } from "./shared";
 import { useRealtime } from "./realtime";
+import { AltaBloque } from "./AltaBloque";
 
 export function Bloques({ token }: { token: string }) {
   const [rows, setRows] = useState<Bloque[]>([]);
@@ -100,6 +101,7 @@ export function Bloques({ token }: { token: string }) {
       <p className="ext-note" style={{ marginTop: 0 }}>
         Equipos de campaña que comparten esta misma app pero no deben ver nada del otro (por ejemplo, dos bloques partidarios distintos, aunque sean del mismo partido). Cada bloque tiene sus propios candidatos, dirigentes, movilizadores, fiscales y votantes cargados — totalmente separado de los demás bloques.
       </p>
+      <AltaBloque token={token} onDone={load} />
       <form className="search-card" onSubmit={create} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
         <input required placeholder="Nombre del bloque" value={nombre} onChange={(e) => setNombre(e.target.value)} style={{ flex: "1 1 200px" }} />
         <button className="ext-btn" disabled={saving}>{saving ? "GUARDANDO…" : "AGREGAR"}</button>

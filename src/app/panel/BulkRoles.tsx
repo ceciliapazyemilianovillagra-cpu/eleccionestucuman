@@ -5,20 +5,14 @@ import { SUPABASE_URL, SUPABASE_KEY, Candidato, electoralRoles, listCandidatos, 
 
 const ROLE_LABELS = Object.fromEntries(electoralRoles) as Record<string, string>;
 const VALID_ROLES: string[] = electoralRoles.map(([key]) => key);
-const PORTAL_FN: Record<string, "movilizadores" | "choferes" | "fiscales" | "candidato"> = {
-  movilizador: "movilizadores",
-  chofer: "choferes",
-  fiscal_general: "fiscales",
-  fiscal_mesa: "fiscales",
-  fiscal_suplente: "fiscales",
-  coordinador_circuito: "fiscales",
-  coordinador_general: "fiscales",
-  candidato: "candidato",
-};
+// Roles que entran al portal externo con codigo de acceso (los votantes y colaboradores de comicio no).
+const LOGIN_ROLES = ["dirigente", "movilizador", "chofer", "fiscal_general", "fiscal_mesa", "fiscal_suplente", "coordinador_circuito", "coordinador_general", "candidato"];
+
+type EscuelaRef = { id: number; circuito: string; circuito_num: string; nombre: string; direccion: string | null; mesa_desde: number; mesa_hasta: number };
 
 const CHUNK_SIZE = 30;
 
-type ParsedRow = { dni: string; role: string; generar: boolean; error?: string };
+type ParsedRow = { dni: string; role: string; generar: boolean; escuelaId: number | null; circuito: string; telefono: string; error?: string };
 type ResultRow = { dni: string; role: string; nombre: string; status: string; message: string; codigo?: string };
 
 export function BulkRoles({ token }: { token: string }) {
@@ -30,22 +24,39 @@ export function BulkRoles({ token }: { token: string }) {
   const [message, setMessage] = useState("");
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   const [candidateId, setCandidateId] = useState("");
+  const [escuelas, setEscuelas] = useState<EscuelaRef[]>([]);
 
   useEffect(() => {
     listCandidatos(token, true).then(setCandidatos);
+    fetch(`${SUPABASE_URL}/rest/v1/escuelas?select=id,circuito,circuito_num,nombre,direccion,mesa_desde,mesa_hasta&order=id`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((rows) => setEscuelas(Array.isArray(rows) ? rows : []))
+      .catch(() => setEscuelas([]));
   }, [token]);
 
   async function downloadTemplate() {
     const XLSX = await import("xlsx");
     const data = [
-      { dni: "30111222", rol: "movilizador", generar_codigo: "si" },
-      { dni: "28333444", rol: "fiscal_mesa", generar_codigo: "si" },
-      { dni: "25555666", rol: "dirigente", generar_codigo: "no" },
+      { dni: "30111222", rol: "movilizador", generar_codigo: "si", telefono: "3815551111", escuela_id: "", circuito: "" },
+      { dni: "28333444", rol: "fiscal_general", generar_codigo: "si", telefono: "3815552222", escuela_id: 31, circuito: "" },
+      { dni: "25555666", rol: "coordinador_circuito", generar_codigo: "si", telefono: "", escuela_id: "", circuito: "10" },
     ];
     const ws = XLSX.utils.json_to_sheet(data);
-    XLSX.utils.sheet_add_aoa(ws, [[`Roles válidos: ${VALID_ROLES.join(", ")}`]], { origin: "E1" });
+    XLSX.utils.sheet_add_aoa(
+      ws,
+      [
+        [`Roles válidos: ${VALID_ROLES.join(", ")}`],
+        ["escuela_id: solo para fiscal_general (mirá la hoja Escuelas). Si lo dejás vacío queda pendiente de asignación."],
+        ["circuito: solo para coordinador_circuito (número, por ejemplo 10)."],
+      ],
+      { origin: "H1" },
+    );
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Roles");
+    const escData = escuelas.map((e) => ({ escuela_id: e.id, circuito: e.circuito, nombre: e.nombre, direccion: e.direccion ?? "", mesas: `${e.mesa_desde}-${e.mesa_hasta}` }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(escData), "Escuelas");
     XLSX.writeFile(wb, "plantilla_roles.xlsx");
   }
 
@@ -69,10 +80,16 @@ export function BulkRoles({ token }: { token: string }) {
           const dni = String(r.dni ?? "").replace(/\D/g, "");
           const role = String(r.rol ?? r.role ?? "").trim().toLowerCase();
           const generarVal = String(r.generar_codigo ?? r.generar ?? "").trim().toLowerCase();
+          const escuelaRaw = String(r.escuela_id ?? "").replace(/\D/g, "");
+          const escuelaId = escuelaRaw ? Number(escuelaRaw) : null;
+          const circuito = String(r.circuito ?? "").trim();
+          const telefono = String(r.telefono ?? "").trim();
           let error = "";
           if (!dni) error = "DNI inválido";
           else if (!VALID_ROLES.includes(role)) error = "Rol inválido";
-          return { dni, role, generar: ["si", "sí", "yes", "true", "1"].includes(generarVal), error: error || undefined };
+          else if (escuelaId != null && !escuelas.some((e) => e.id === escuelaId)) error = "escuela_id no existe";
+          else if (role === "coordinador_circuito" && !escuelas.some((e) => e.circuito_num === circuito)) error = "Falta el circuito del coordinador";
+          return { dni, role, generar: ["si", "sí", "yes", "true", "1"].includes(generarVal), escuelaId, circuito, telefono, error: error || undefined };
         });
 
       setRows(parsed);
@@ -83,10 +100,9 @@ export function BulkRoles({ token }: { token: string }) {
   }
 
   async function provisionCode(role: string, padronId: number): Promise<string | undefined> {
-    const fn = PORTAL_FN[role];
-    if (!fn) return undefined;
+    if (!LOGIN_ROLES.includes(role)) return undefined;
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/comicios`, {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ action: "provision", padron_id: padronId }),
@@ -95,6 +111,28 @@ export function BulkRoles({ token }: { token: string }) {
       return data.code as string | undefined;
     } catch {
       return undefined;
+    }
+  }
+
+  // Escuela / circuito del rol y celular: se completan despues de asignar el rol.
+  async function applyExtras(original: ParsedRow, padronId: number, candId: number) {
+    const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+    let patch: Record<string, unknown> | null = null;
+    if (original.role === "fiscal_general") {
+      const esc = original.escuelaId != null ? escuelas.find((e) => e.id === original.escuelaId) : null;
+      patch = esc ? { escuela_id: esc.id, circuito: esc.circuito_num } : { escuela_id: null, circuito: "PENDIENTE" };
+    } else if (original.role === "coordinador_circuito" && original.circuito) {
+      patch = { circuito: original.circuito };
+    }
+    if (patch) {
+      await fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${padronId}&role=eq.${original.role}&candidate_id=eq.${candId}`, { method: "PATCH", headers, body: JSON.stringify(patch) });
+    }
+    if (original.telefono) {
+      await fetch(`${SUPABASE_URL}/rest/v1/voter_profiles`, {
+        method: "POST",
+        headers: { ...headers, Prefer: "resolution=merge-duplicates" },
+        body: JSON.stringify({ padron_id: padronId, telefono: original.telefono }),
+      });
     }
   }
 
@@ -118,6 +156,9 @@ export function BulkRoles({ token }: { token: string }) {
           const r = data[j];
           const original = chunk[j];
           let codigo: string | undefined;
+          if (r.r_status === "ok" && r.r_padron_id) {
+            await applyExtras(original, r.r_padron_id, Number(candidateId));
+          }
           if (r.r_status === "ok" && original.generar && r.r_padron_id) {
             codigo = await provisionCode(r.r_role, r.r_padron_id);
           }
