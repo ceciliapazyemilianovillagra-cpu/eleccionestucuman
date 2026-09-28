@@ -96,7 +96,7 @@
 .ext-topbar {
   background: var(--navy);
   color: #fff;
-  padding: calc(16px + env(safe-area-inset-top)) 18px 16px;
+  padding: calc(16px + env(safe-area-inset-top, 0px) + 6px) 18px 16px;
   display: flex; flex-direction: column; gap: 12px;
   border-bottom: 5px solid var(--yellow, #f2c94c);
 }
