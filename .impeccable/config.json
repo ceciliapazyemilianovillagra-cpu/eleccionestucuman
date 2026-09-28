@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(.34, 1.56, .64, 1)",
+        "createdAt": "2026-09-28T14:57:11.612Z",
+        "reason": "intentional: success-checkmark pop feedback on Presencia/Cierre de mesa/Copiar buttons, requested as amicro-style micro-interaction"
+      }
+    ]
+  }
+}

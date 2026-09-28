@@ -22,6 +22,7 @@ export default function Comicios() {
   const [dni, setDni] = useState("");
   const [code, setCode] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [loginShake, setLoginShake] = useState(0);
   const [loggingIn, setLoggingIn] = useState(false);
   const [roles, setRoles] = useState<string[]>([]);
   const [tab, setTab] = useState<TabKey | null>(null);
@@ -87,6 +88,7 @@ export default function Comicios() {
       saveToken(FN, d.token);
     } else {
       setLoginError(d.error || "No se pudo ingresar.");
+      setLoginShake((n) => n + 1);
     }
   }
 
@@ -118,7 +120,7 @@ export default function Comicios() {
 
   if (!token) {
     return (
-      <ExternalLoginCard>
+      <ExternalLoginCard shakeKey={loginShake}>
         <form onSubmit={login}>
           <img src="/pulso-electoral-logo.png" alt="Pulso Electoral" />
           <small>GESTIÓN Y LOGÍSTICA TERRITORIAL</small>

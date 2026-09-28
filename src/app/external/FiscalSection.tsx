@@ -261,7 +261,7 @@ export function FiscalSection({ token, roles, candidatoNombre, ownerKey }: { tok
     <>
       {pending.length > 0 && (
         <section className="ext-card" style={{ background: "#fff8e1", borderColor: "#f2c94c" }}>
-          <h2>Envíos pendientes ({pending.length})</h2>
+          <h2><span className="ext-pulse-dot" aria-hidden="true" />Envíos pendientes ({pending.length})</h2>
           <p className="ext-hint">Estos datos están guardados en tu teléfono y se envían solos cuando hay señal.</p>
           <div className="log-list">
             {pending.map((item) => (
@@ -293,11 +293,11 @@ export function FiscalSection({ token, roles, candidatoNombre, ownerKey }: { tok
       <section className="ext-card">
         <h2>Presencia</h2>
         <p className="ext-hint">Marcá tu llegada a la mesa. Se registra fecha, hora y ubicación.</p>
-        <button className="ext-btn full" onClick={markPresent} disabled={locating || presentOk}>
+        <button className={`ext-btn full${presentOk ? " is-done" : ""}`} onClick={markPresent} disabled={locating || presentOk}>
           {locating ? (
             "OBTENIENDO UBICACIÓN..."
           ) : presentOk ? (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span className="ext-check-pop" style={{ alignItems: "center", gap: 6 }}>
               <Check size={14} strokeWidth={3} /> PRESENCIA REGISTRADA
             </span>
           ) : (
@@ -331,11 +331,11 @@ export function FiscalSection({ token, roles, candidatoNombre, ownerKey }: { tok
             </span>
             <input type="file" accept="image/*" capture="environment" onChange={onFileChange} style={{ display: "none" }} disabled={closed} />
           </label>
-          <button className="ext-btn full" style={{ marginTop: 14 }} disabled={closing || closed}>
+          <button className={`ext-btn full${closed ? " is-done" : ""}`} style={{ marginTop: 14 }} disabled={closing || closed}>
             {closing ? (
               "ENVIANDO..."
             ) : closed ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span className="ext-check-pop" style={{ alignItems: "center", gap: 6 }}>
                 <Check size={14} strokeWidth={3} /> MESA CERRADA
               </span>
             ) : (

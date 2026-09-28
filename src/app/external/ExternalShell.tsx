@@ -116,10 +116,10 @@ export function ExternalSplash({ label = "Cargando tu cuenta…" }: { label?: st
   );
 }
 
-export function ExternalLoginCard({ children }: { children: ReactNode }) {
+export function ExternalLoginCard({ children, shakeKey }: { children: ReactNode; shakeKey?: number }) {
   return (
     <main className="ext ext-login">
-      <div className="ext-login-card">{children}</div>
+      <div key={shakeKey ?? 0} className={`ext-login-card${shakeKey ? " ext-shake" : ""}`}>{children}</div>
     </main>
   );
 }

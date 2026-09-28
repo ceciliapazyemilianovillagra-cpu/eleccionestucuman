@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useState } from "react";
+import { Check } from "lucide-react";
 import { SUPABASE_URL, SUPABASE_KEY, Voter, copyText } from "./shared";
 
 const CARGOS: [string, string][] = [["legislador", "Legislador"], ["concejal", "Concejal"], ["delegado_comunal", "Delegado comunal"], ["otro", "Otro"]];
@@ -207,8 +208,14 @@ export function AltaBloque({ token, onDone }: { token: string; onDone: () => voi
                 <>
                   <p style={{ margin: "2px 0 8px", fontSize: 18, fontWeight: 800, letterSpacing: ".04em" }}>{a.codigo}</p>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <button type="button" className="ext-btn" onClick={() => copiar(a, resultado.bloque)}>
-                      {copiado === a.dni ? "MENSAJE COPIADO" : "COPIAR MENSAJE"}
+                    <button type="button" className={`ext-btn${copiado === a.dni ? " is-done" : ""}`} onClick={() => copiar(a, resultado.bloque)}>
+                      {copiado === a.dni ? (
+                        <span className="ext-check-pop" style={{ alignItems: "center", gap: 6 }}>
+                          <Check size={14} strokeWidth={3} /> MENSAJE COPIADO
+                        </span>
+                      ) : (
+                        "COPIAR MENSAJE"
+                      )}
                     </button>
                     <a className="ext-btn secondary" style={{ textDecoration: "none" }} target="_blank" rel="noreferrer" href={`https://wa.me/?text=${encodeURIComponent(mensaje(a, resultado.bloque))}`}>
                       ABRIR WHATSAPP
