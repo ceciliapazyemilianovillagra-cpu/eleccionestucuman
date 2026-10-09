@@ -3,3 +3,10 @@ node_modules/
 .env*
 !.env.example
 npm-debug.log*
+
+# archivos locales / generados
+tsconfig.tsbuildinfo
+propuesta_whatsapp.txt
+.agents/
+.claude/skills/
+skills-lock.json
