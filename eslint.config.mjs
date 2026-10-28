@@ -14,5 +14,5 @@ export default defineConfig([
       "@next/next/no-img-element": "off",
     },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores(["supabase/**", ".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ]);

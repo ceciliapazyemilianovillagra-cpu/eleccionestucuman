@@ -10,3 +10,6 @@ propuesta_whatsapp.txt
 .agents/
 .claude/skills/
 skills-lock.json
+
+# backend exportado: NO subir mientras el repo sea publico
+supabase/

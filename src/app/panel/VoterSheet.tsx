@@ -22,12 +22,13 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
   const [escuelas, setEscuelas] = useState<EscuelaOpt[]>([]);
   const [escuelaId, setEscuelaId] = useState("");
   const [circuito, setCircuito] = useState("");
+  const [inactiveRoles, setInactiveRoles] = useState<string[]>([]);
 
   useEffect(() => {
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
     Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/voter_profiles?select=telefono,estado,observaciones&padron_id=eq.${voter.id}`, { headers }).then((r) => r.json()),
-      fetch(`${SUPABASE_URL}/rest/v1/person_roles?select=role,candidate_id,circuito,escuela_id&padron_id=eq.${voter.id}&active=is.true`, { headers }).then((r) => r.json()),
+      fetch(`${SUPABASE_URL}/rest/v1/person_roles?select=role,candidate_id,circuito,escuela_id,active&padron_id=eq.${voter.id}`, { headers }).then((r) => r.json()),
       fetch(`${SUPABASE_URL}/rest/v1/escuelas?select=id,circuito,circuito_num,nombre,mesa_desde,mesa_hasta&order=id`, { headers }).then((r) => r.json()).catch(() => []),
       listCandidatos(token, true),
       rpc(token, "my_candidate_id").catch(() => null),
@@ -37,7 +38,9 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
         setStatus(profile[0].estado || "sin_contactar");
         setNotes(profile[0].observaciones || "");
       }
-      const assignedRows: { role: string; candidate_id: number | null; circuito: string | null; escuela_id: number | null }[] = assigned || [];
+      const allRows: { role: string; candidate_id: number | null; circuito: string | null; escuela_id: number | null; active: boolean }[] = Array.isArray(assigned) ? assigned : [];
+      const assignedRows = allRows.filter((item) => item.active !== false);
+      setInactiveRoles(allRows.filter((item) => item.active === false).map((item) => item.role));
       setEscuelas(Array.isArray(escuelasList) ? escuelasList : []);
       const fg = assignedRows.find((item) => item.role === "fiscal_general");
       if (fg) setEscuelaId(fg.escuela_id ? String(fg.escuela_id) : fg.circuito === "PENDIENTE" ? "PENDIENTE" : "");
@@ -112,7 +115,11 @@ export function VoterSheet({ voter, token, close }: { voter: Voter; token: strin
     const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
     const requests = [
       fetch(`${SUPABASE_URL}/rest/v1/rpc/save_voter_profile`, { method: "POST", headers, body: JSON.stringify({ p_padron_id: voter.id, p_telefono: phone, p_estado: status, p_observaciones: notes }) }),
-      ...added.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles`, { method: "POST", headers, body: JSON.stringify({ padron_id: voter.id, role, candidate_id: Number(candidateId), ...extraFor(role) }) })),
+      ...added.map((role) =>
+        inactiveRoles.includes(role)
+          ? fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${voter.id}&role=eq.${role}&active=is.false`, { method: "PATCH", headers, body: JSON.stringify({ active: true, candidate_id: Number(candidateId), ...extraFor(role) }) })
+          : fetch(`${SUPABASE_URL}/rest/v1/person_roles`, { method: "POST", headers, body: JSON.stringify({ padron_id: voter.id, role, candidate_id: Number(candidateId), ...extraFor(role) }) })
+      ),
       ...kept.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${voter.id}&role=eq.${role}`, { method: "PATCH", headers, body: JSON.stringify({ candidate_id: Number(candidateId), ...extraFor(role) }) })),
       ...removed.map((role) => fetch(`${SUPABASE_URL}/rest/v1/person_roles?padron_id=eq.${voter.id}&role=eq.${role}`, { method: "DELETE", headers })),
     ];
